@@ -1,0 +1,14 @@
+{
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "explorer.compactFolders": false,
+  "editor.rulers": [120],
+  "editor.tabSize": 4,
+  "editor.insertSpaces": false,
+  "editor.renderLineHighlight": "gutter",
+  "eslint.validate": ["javascript", "typescript"],
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "cSpell.words": ["Fastify", "nest"]
+}

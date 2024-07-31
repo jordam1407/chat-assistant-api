@@ -1,13 +1,26 @@
 import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common'
+import { ConfigModule } from '@nestjs/config'
+import { validate } from '@src/config/core/env.validation'
+import configuration from '@src/config/core/environment.config'
+import { MongoModule } from '@src/config/database/mongo.module'
 import { ThrottlerConfigModule } from '@src/config/security/throttler.module'
-import { AssistantsModule } from '@src/modules/assistants/assistant.module'
+import { ThreadModule } from '@src/modules/thread/thread.module'
 
-const API_MODULES = [AssistantsModule]
+const API_MODULES = [ThreadModule]
 
-const APIs = ['user']
+const APIs = ['assistants']
 
 @Module({
-	imports: [ThrottlerConfigModule, ...API_MODULES],
+	imports: [
+		ConfigModule.forRoot({
+			isGlobal: true,
+			load: [configuration],
+			validate,
+		}),
+		ThrottlerConfigModule,
+		MongoModule,
+		...API_MODULES,
+	],
 	controllers: [],
 	providers: [],
 })

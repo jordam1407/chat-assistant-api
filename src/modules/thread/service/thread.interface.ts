@@ -2,7 +2,7 @@ import { Thread } from '@src/modules/thread/schemas/thread.schema'
 import { Message } from 'openai/resources/beta/threads/messages'
 
 export interface IThreadService {
-	fetchAnswer(message: string, tId?: string): Promise<string>
+	fetchAnswer(message: string, tId?: string): Promise<IFetchAnswerResponse>
 	getThreadById(tId: string): Promise<IThreadById>
 	listThreads(): Promise<IThreadList>
 	getUsage({ endDate, startDate }: { startDate?: Date; endDate?: Date }): Promise<IUsage>
@@ -23,10 +23,14 @@ export interface IUsageItems {
 }
 
 export interface IThreadById {
-	thread: { messages: Message[]; totalCost: number; totalTokens: number }
+	thread: { messages: Pick<Message, 'content' | 'created_at' | 'role'>[]; totalCost: number; totalTokens: number }
 	usageMetrics: IUsageItems
 }
 
 export interface IThreadList {
 	threads: Thread[]
+}
+export interface IFetchAnswerResponse {
+	message: Pick<Message, 'content' | 'created_at' | 'role'>
+	threadId: string
 }

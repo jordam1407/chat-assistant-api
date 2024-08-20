@@ -3,6 +3,9 @@ import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify
 
 export class FastifyConfig {
 	static async createService(appModule) {
-		return NestFactory.create<NestFastifyApplication>(appModule, new FastifyAdapter({ logger: true }))
+		return NestFactory.create<NestFastifyApplication>(
+			appModule,
+			new FastifyAdapter({ logger: true, ignoreTrailingSlash: true })
+		)
 	}
 }

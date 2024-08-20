@@ -4,9 +4,10 @@ import { validate } from '@src/config/core/env.validation'
 import configuration from '@src/config/core/environment.config'
 import { MongoModule } from '@src/config/database/mongo.module'
 import { ThrottlerConfigModule } from '@src/config/security/throttler.module'
+import { AuthModule } from '@src/modules/auth/auth.module'
 import { ThreadModule } from '@src/modules/thread/thread.module'
 
-const API_MODULES = [ThreadModule]
+const API_MODULES = [ThreadModule, AuthModule]
 
 const APIs = ['assistants']
 

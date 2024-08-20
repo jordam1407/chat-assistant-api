@@ -1,55 +1,56 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
+import { OpenAiService } from '@src/modules/openai/service/openai.service'
 import { Thread } from '@src/modules/thread/schemas/thread.schema'
 import {
+	IFetchAnswerResponse,
 	IThreadById,
 	IThreadList,
 	IThreadService,
 	IUsage,
 	IUsageItems,
 } from '@src/modules/thread/service/thread.interface'
-import { OpenAiAdapter } from '@src/shared/adapters/openai/openai.adapter'
 import { Model } from 'mongoose'
 
 @Injectable()
 export class ThreadService implements IThreadService {
 	private threadId: string
-	private OpenAI: OpenAiAdapter
 	private modelPrice = 0.15 / 1000000
 
-	constructor(@InjectModel(Thread.name) private readonly threadModel: Model<Thread>) {
-		this.OpenAI = new OpenAiAdapter({
-			assistant: 'asst_yyEF3Z29cD0olDWtanbJ6cSS',
-			model: 'gpt-4o-mini',
-			apiKey: 'sk-proj-j0ggz4BetKPhPDAuykmAT3BlbkFJnE3484f9cVGSi92V8yrB',
-		})
-	}
+	constructor(
+		@InjectModel(Thread.name) private readonly threadModel: Model<Thread>,
+		private readonly openAiAdapter: OpenAiService
+	) {}
 
-	async fetchAnswer(reqMessage: string, tId?: string): Promise<string> {
+	async fetchAnswer(reqMessage: string, tId?: string): Promise<IFetchAnswerResponse> {
 		this.threadId = tId
 
 		if (!this.threadId) {
-			this.threadId = await this.OpenAI.createThread()
+			this.threadId = await this.openAiAdapter.createThread()
 			await this.createThread(this.threadId)
 		}
 
-		await this.OpenAI.createMessage({ threadId: this.threadId, message: reqMessage })
+		await this.openAiAdapter.createMessage({ threadId: this.threadId, message: reqMessage })
 
-		const { message, tokens } = await this.OpenAI.getAssistantResponse({ threadId: this.threadId })
+		const { message, tokens } = await this.openAiAdapter.getAssistantResponse({ threadId: this.threadId })
 
 		await this.updateThread(this.threadId, tokens)
 
-		return message
+		return { message, threadId: this.threadId }
 	}
 
 	async getThreadById(tId: string): Promise<IThreadById> {
-		const threadMessages = await this.OpenAI.getMessages({ threadId: tId })
+		const threadMessages = await this.openAiAdapter.getMessages({ threadId: tId })
 		const { totalCost, totalTokens } = await this.calculateTokensForThread(tId)
 		const { current } = await this.getUsage({})
 
 		return {
 			thread: {
-				messages: threadMessages.data,
+				messages: threadMessages.data.map((message) => ({
+					content: message.content,
+					created_at: message.created_at,
+					role: message.role,
+				})),
 				totalCost,
 				totalTokens,
 			},
@@ -72,7 +73,7 @@ export class ThreadService implements IThreadService {
 				$inc: {
 					totalTokens: tokens,
 					cost: tokens * this.modelPrice,
-					totalMessages: 1,
+					totalMessages: 2,
 				},
 			},
 			{ new: true, useFindAndModify: false }

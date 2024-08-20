@@ -1,24 +1,22 @@
-import { ConfigService } from '@nestjs/config'
-import { IOpenAIConnection } from '@src/shared/adapters/openai/openai.connection'
+import { IFetchAnswerResponse } from '@src/modules/thread/service/thread.interface'
 import OpenAI from 'openai'
 import { Message, MessagesPage } from 'openai/resources/beta/threads/messages'
 import { Run } from 'openai/resources/beta/threads/runs/runs'
-import { Thread } from 'openai/resources/beta/threads/threads'
 
-export class OpenAiAdapter implements IOpenAIConnection {
+export class OpenAiService {
 	private openai: OpenAI
 	private model: string
 	private assistant: string
 
-	constructor({ assistant, model, apiKey }: { model: string; assistant: string; apiKey: string }) {
+	constructor() {
 		this.openai = new OpenAI({
-			apiKey,
+			apiKey: 'sk-proj-j0ggz4BetKPhPDAuykmAT3BlbkFJnE3484f9cVGSi92V8yrB',
 		})
-		this.model = model
-		this.assistant = assistant
+		this.model = 'gpt-4o-mini'
+		this.assistant = 'asst_yyEF3Z29cD0olDWtanbJ6cSS'
 	}
 
-	async getAssistantResponse({ threadId }: { threadId: string }): Promise<{ message: string; tokens: number }> {
+	async getAssistantResponse({ threadId }: { threadId: string }): Promise<IFetchAnswerResponse & { tokens: number }> {
 		const run = await this.createRun({ assistantId: this.assistant, threadId })
 
 		if (run.status === 'completed') {
@@ -28,10 +26,9 @@ export class OpenAiAdapter implements IOpenAIConnection {
 				console.log(`${message.role} > ${message.content[0].text.value}`)
 			}
 			const tokens = run.usage.total_tokens
-			// @ts-expect-error - The last message is always a text message
-			const message = this.sanitizeMessage(messages.data[messages.data.length - 1].content[0].text.value)
+			const message = messages.data[messages.data.length - 1]
 
-			return { message, tokens }
+			return { message, tokens, threadId }
 		}
 	}
 
@@ -70,7 +67,7 @@ export class OpenAiAdapter implements IOpenAIConnection {
 	}
 
 	private generateInstructions(companyName: string) {
-		return `You are an assistant responsible for handling customer interactions on any type of communication tool for ${companyName}. Your responsibilities include sales, post-sale, FAQ, customer support, and addressing all other user requests. You should respond concisely and as briefly as possible to address customer requests. You are not allowed to answer questions outside the scope of the ${companyName} company. If any request is outside the provided documentation, respond with: "Não devo falar sobre isso, posso te ajudar em algo mais?".`
+		return `You are Speed, an assistant responsible for handling customer interactions on any type of communication tool for ${companyName}. Your responsibilities include sales, post-sale, FAQ, customer support, and addressing all other user requests. You should respond concisely and as briefly as possible to address customer requests. You are not allowed to answer questions outside the scope of the ${companyName} company be polite about it. Respond using html simple tags without styling for example </br> <strong> etc, do not use markdown. new lines are defined by backslash. In case you cant provide a apropriet answer, you can ask the user to provide more information and after that tell him to contact human support on link: 'https://wa.me/+553195968976?text=Ol%C3%A1%2C%20vim%20da%20intelig%C3%AAncia%20artificial.'.`
 	}
 
 	private sanitizeMessage(message: string) {

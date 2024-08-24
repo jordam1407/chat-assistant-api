@@ -1,0 +1,21 @@
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+
+# Dependency directory
+node_modules/
+
+# Source Control
+.git/
+.gitignore
+
+# Linter config
+.eslintrc
+
+# Editor con
+.prettierrc

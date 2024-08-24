@@ -5,7 +5,7 @@ import { AuthUserRepository } from '@src/modules/auth/data/auth-user.repository'
 import { SignUpReqDTO } from '@src/modules/auth/dto/auth.request.dto'
 import { AuthUserResponseDTO } from '@src/modules/auth/dto/auth.response.dto'
 import * as bcrypt from 'bcryptjs'
-
+import { v4 as uuidv4 } from 'uuid'
 @Injectable()
 export class AuthService {
 	constructor(
@@ -21,12 +21,14 @@ export class AuthService {
 		}
 
 		const hashedPassword = await this.generateHash(password)
+		const organizationId = uuidv4()
 
 		const newUser = await this.authRepo.create({
 			email,
 			password: hashedPassword,
 			name,
 			phone,
+			organizationId,
 		})
 
 		const userId = newUser._id.toString()
@@ -46,8 +48,7 @@ export class AuthService {
 				name,
 				phone,
 				refreshToken,
-				openAIApiKey: newUser.openAIApiKey,
-				assistant: newUser.assistant,
+				organizationId: newUser.organizationId,
 			},
 		})
 
@@ -55,7 +56,6 @@ export class AuthService {
 	}
 
 	async signIn(email: string, pass: string): Promise<AuthUserResponseDTO> {
-		return
 		const user = await this.authRepo.findByEmail(email)
 		if (!user) {
 			throw new UnauthorizedException('Invalid credentials')
@@ -82,8 +82,45 @@ export class AuthService {
 				name: user.name,
 				phone: user.phone,
 				refreshToken,
-				openAIApiKey: user.openAIApiKey,
-				assistant: user.assistant,
+				organizationId: user.organizationId,
+			},
+		})
+
+		return data
+	}
+
+	async refresh(token: string): Promise<AuthUserResponseDTO> {
+		const { email } = await this.decodeToken(token)
+
+		const user = await this.authRepo.findByEmail(email)
+		if (!user) {
+			throw new UnauthorizedException('User already exists')
+		}
+
+		const refreshTokenMatches = await bcrypt.compare(token, user.refreshToken)
+
+		if (!refreshTokenMatches) {
+			throw new UnauthorizedException('Accesso denied')
+		}
+
+		const userId = user._id.toString()
+
+		const { accessToken, refreshToken } = await this.generateTokens({
+			email: user.email,
+			name: user.name,
+			userId: user._id.toString(),
+		})
+
+		await this.updateRefreshToken(userId, refreshToken)
+
+		const data = new AuthUserResponseDTO({
+			access_token: accessToken,
+			user: {
+				email: user.email,
+				name: user.name,
+				phone: user.phone,
+				refreshToken,
+				organizationId: user.organizationId,
 			},
 		})
 
@@ -121,5 +158,11 @@ export class AuthService {
 
 	private generateHash(data: string): Promise<string> {
 		return bcrypt.hash(data, 10)
+	}
+
+	private async decodeToken(token: string): Promise<{ email: string; name: string }> {
+		return await this.jwtService.verifyAsync(token, {
+			secret: this.env.get('jwtRefreshSecret'),
+		})
 	}
 }

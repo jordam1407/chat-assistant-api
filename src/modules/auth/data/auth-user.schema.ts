@@ -1,6 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { IAuthAccount } from '@src/modules/auth/types/auth.types'
-import { Types } from 'mongoose'
 
 @Schema({ timestamps: true })
 export class AuthUser implements IAuthAccount {
@@ -20,10 +19,7 @@ export class AuthUser implements IAuthAccount {
 	phone: string
 
 	@Prop()
-	openAIApiKey: string
-
-	@Prop()
-	assistant: string
+	organizationId: string
 }
 
 export const AuthUserSchema = SchemaFactory.createForClass(AuthUser)

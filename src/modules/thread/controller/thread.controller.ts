@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Inject, Param, Post, Query } from '@nestjs/common'
+import { Public } from '@src/modules/auth/decorators/auth.decorator'
 import { IThreadRequestDto, UsageQueryDto } from '@src/modules/thread/dto/thread.request.dto'
 import {
 	IFetchAnswerResponse,
@@ -13,11 +14,13 @@ import { ThreadService } from '@src/modules/thread/service/thread.service'
 export class ThreadController {
 	constructor(@Inject(ThreadService) private readonly threadService: IThreadService) {}
 
+	@Public()
 	@Post()
 	async createMessage(@Body() body: IThreadRequestDto): Promise<IFetchAnswerResponse> {
 		return this.threadService.fetchAnswer(body.message, body.threadId)
 	}
 
+	@Public()
 	@Get(':id')
 	async getThread(@Param('id') threadId: string): Promise<IThreadById> {
 		return this.threadService.getThreadById(threadId)

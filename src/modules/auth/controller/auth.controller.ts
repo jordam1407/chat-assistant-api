@@ -17,8 +17,15 @@ export class AuthController {
 
 	@Public()
 	@HttpCode(HttpStatus.OK)
-	@Post('login')
+	@Post('sign-in')
 	signIn(@Body() signInDto: LoginDto): Promise<AuthUserResponseDTO> {
 		return this.authService.signIn(signInDto.email, signInDto.password)
+	}
+
+	@Public()
+	@HttpCode(HttpStatus.OK)
+	@Post('refresh')
+	refresh(@Body() refreshReqDto: { refreshToken: string }): Promise<AuthUserResponseDTO> {
+		return this.authService.refresh(refreshReqDto.refreshToken)
 	}
 }

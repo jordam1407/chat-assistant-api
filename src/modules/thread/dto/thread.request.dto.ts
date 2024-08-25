@@ -4,6 +4,7 @@ import { IsOptional } from 'class-validator'
 export class IThreadRequestDto {
 	message: string
 	threadId?: string
+	orgId: string
 }
 
 export class UsageQueryDto {

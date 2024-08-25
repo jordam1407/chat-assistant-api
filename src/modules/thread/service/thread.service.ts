@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { OpenAiService } from '@src/modules/openai/service/openai.service'
+import { OrgService } from '@src/modules/organization/service/org.service'
 import { Thread } from '@src/modules/thread/schemas/thread.schema'
 import {
+	IFetchAnserReq,
 	IFetchAnswerResponse,
 	IThreadById,
 	IThreadList,
@@ -19,30 +21,35 @@ export class ThreadService implements IThreadService {
 
 	constructor(
 		@InjectModel(Thread.name) private readonly threadModel: Model<Thread>,
-		private readonly openAiAdapter: OpenAiService
+		private readonly openAiAdapter: OpenAiService,
+		private readonly orgService: OrgService
 	) {}
 
-	async fetchAnswer(reqMessage: string, tId?: string): Promise<IFetchAnswerResponse> {
+	async fetchAnswer({ message, orgId, tId }: IFetchAnserReq): Promise<IFetchAnswerResponse> {
 		this.threadId = tId
+		const org = await this.orgService.findOrgById(orgId)
+
+		if (!org) {
+			throw new NotFoundException('No such organization')
+		}
 
 		if (!this.threadId) {
 			this.threadId = await this.openAiAdapter.createThread()
-			await this.createThread(this.threadId)
+			await this.createThread(this.threadId, orgId)
 		}
 
-		await this.openAiAdapter.createMessage({ threadId: this.threadId, message: reqMessage })
+		await this.openAiAdapter.createMessage({ threadId: this.threadId, message: message })
 
-		const { message, tokens } = await this.openAiAdapter.getAssistantResponse({ threadId: this.threadId })
+		const { message: answer, tokens } = await this.openAiAdapter.getAssistantResponse({ threadId: this.threadId })
 
 		await this.updateThread(this.threadId, tokens)
 
-		return { message, threadId: this.threadId }
+		return { message: answer, threadId: this.threadId }
 	}
 
 	async getThreadById(tId: string): Promise<IThreadById> {
 		const threadMessages = await this.openAiAdapter.getMessages({ threadId: tId })
 		const { totalCost, totalTokens } = await this.calculateTokensForThread(tId)
-		const { current } = await this.getUsage({})
 
 		return {
 			thread: {
@@ -54,16 +61,15 @@ export class ThreadService implements IThreadService {
 				totalCost,
 				totalTokens,
 			},
-			usageMetrics: current,
 		}
 	}
 
-	async listThreads(): Promise<IThreadList> {
-		return { threads: await this.threadModel.find() }
+	async listThreads(orgId: string): Promise<IThreadList> {
+		return { threads: await this.threadModel.find({ organizationId: orgId }) }
 	}
 
-	async createThread(threadId: string): Promise<void> {
-		await this.threadModel.create({ threadId })
+	async createThread(threadId: string, organizationId: string): Promise<void> {
+		await this.threadModel.create({ threadId, organizationId })
 	}
 
 	async updateThread(threadId: string, tokens: number): Promise<void> {
@@ -80,7 +86,15 @@ export class ThreadService implements IThreadService {
 		)
 	}
 
-	private async aggregateUsageItems(startDate?: Date, endDate?: Date): Promise<IUsageItems> {
+	private async aggregateUsageItems({
+		endDate,
+		orgId,
+		startDate,
+	}: {
+		startDate?: Date
+		endDate?: Date
+		orgId: string
+	}): Promise<IUsageItems> {
 		const matchStage =
 			startDate && endDate
 				? {
@@ -92,7 +106,7 @@ export class ThreadService implements IThreadService {
 				: {}
 
 		const pipeline = [
-			{ $match: matchStage },
+			{ $match: { ...matchStage, organizationId: orgId } },
 			{
 				$group: {
 					_id: null,
@@ -144,22 +158,21 @@ export class ThreadService implements IThreadService {
 		return { totalTokens: thread.totalTokens, totalCost: thread.cost }
 	}
 
-	// Helpers
-	async getUsage({ endDate, startDate }: { startDate?: Date; endDate?: Date }): Promise<IUsage> {
+	async getUsage({ endDate, startDate, orgId }: { startDate?: Date; endDate?: Date; orgId: string }): Promise<IUsage> {
 		let currentPeriod: IUsageItems
 		let lastPeriodPercent: IUsageItems | undefined
 
 		if (startDate && endDate) {
-			currentPeriod = await this.aggregateUsageItems(startDate, endDate)
+			currentPeriod = await this.aggregateUsageItems({ startDate, endDate, orgId })
 
 			const endPeriod = new Date(startDate.getTime() - 24 * 60 * 60 * 1000)
 			const startPeriod = new Date(endDate.getTime() - (endDate.getTime() - startDate.getTime()))
 
-			const lastPeriod = await this.aggregateUsageItems(startPeriod, endPeriod)
+			const lastPeriod = await this.aggregateUsageItems({ startDate: startPeriod, endDate: endPeriod, orgId })
 
 			lastPeriodPercent = lastPeriod ? this.calculatePercentChange(currentPeriod, lastPeriod) : undefined
 		} else {
-			currentPeriod = await this.aggregateUsageItems()
+			currentPeriod = await this.aggregateUsageItems({ orgId })
 		}
 
 		return {
@@ -168,6 +181,7 @@ export class ThreadService implements IThreadService {
 		}
 	}
 
+	// Helpers
 	private calculatePercentChange(current: IUsageItems, lastPeriod: IUsageItems): IUsageItems {
 		const percentChange = (currentValue: number, lastValue: number) =>
 			lastValue === 0 ? (currentValue > 0 ? 100 : 0) : ((currentValue - lastValue) / lastValue) * 100

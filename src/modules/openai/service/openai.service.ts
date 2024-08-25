@@ -54,7 +54,6 @@ export class OpenAiService {
 			instructions: this.generateInstructions('WAspeed'),
 			tools: [{ type: 'file_search', file_search: { max_num_results: 1 } }],
 		})
-		console.log('Run:', run)
 		return run
 	}
 

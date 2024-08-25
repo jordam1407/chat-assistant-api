@@ -22,6 +22,9 @@ export class Thread {
 
 	@Prop({ default: 0 })
 	totalMessages: number
+
+	@Prop({ default: 0 })
+	organizationId: string
 }
 
 export const ThreadSchema = SchemaFactory.createForClass(Thread)

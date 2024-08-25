@@ -37,6 +37,7 @@ export class AuthService {
 			email,
 			name,
 			userId,
+			orgId: organizationId,
 		})
 
 		await this.updateRefreshToken(userId, refreshToken)
@@ -71,6 +72,7 @@ export class AuthService {
 			email: user.email,
 			name: user.name,
 			userId: user._id.toString(),
+			orgId: user.organizationId,
 		})
 
 		await this.updateRefreshToken(userId, refreshToken)
@@ -109,6 +111,7 @@ export class AuthService {
 			email: user.email,
 			name: user.name,
 			userId: user._id.toString(),
+			orgId: user.organizationId,
 		})
 
 		await this.updateRefreshToken(userId, refreshToken)
@@ -132,10 +135,21 @@ export class AuthService {
 		return this.authRepo.updateToken(userId, hashedRefreshToken)
 	}
 
-	private async generateTokens({ email, name, userId }: { userId: string; name: string; email: string }) {
+	private async generateTokens({
+		email,
+		name,
+		userId,
+		orgId,
+	}: {
+		userId: string
+		name: string
+		email: string
+		orgId: string
+	}) {
 		const tokenPayload = {
 			name,
 			email,
+			orgId,
 		}
 		const [accessToken, refreshToken] = await Promise.all([
 			this.jwtService.signAsync(tokenPayload, {

@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Inject, Param, Post, Query } from '@nestjs/common'
+import { GetOrgId } from '@src/core/decorators/get-org-id.decorator'
 import { Public } from '@src/modules/auth/decorators/auth.decorator'
 import { IThreadRequestDto, UsageQueryDto } from '@src/modules/thread/dto/thread.request.dto'
 import {
@@ -16,8 +17,8 @@ export class ThreadController {
 
 	@Public()
 	@Post()
-	async createMessage(@Body() body: IThreadRequestDto): Promise<IFetchAnswerResponse> {
-		return this.threadService.fetchAnswer(body.message, body.threadId)
+	async createMessage(@Body() { message, orgId, threadId }: IThreadRequestDto): Promise<IFetchAnswerResponse> {
+		return this.threadService.fetchAnswer({ message, orgId, tId: threadId })
 	}
 
 	@Public()
@@ -27,13 +28,13 @@ export class ThreadController {
 	}
 
 	@Get('list')
-	async listThreads(): Promise<IThreadList> {
-		return this.threadService.listThreads()
+	async listThreads(@GetOrgId() orgId: string): Promise<IThreadList> {
+		return this.threadService.listThreads(orgId)
 	}
 
 	@Get('usage')
-	async getUsage(@Query() query: UsageQueryDto): Promise<IUsage> {
+	async getUsage(@Query() query: UsageQueryDto, @GetOrgId() orgId: string): Promise<IUsage> {
 		const { startDate, endDate } = query
-		return this.threadService.getUsage({ startDate, endDate })
+		return this.threadService.getUsage({ startDate, endDate, orgId })
 	}
 }

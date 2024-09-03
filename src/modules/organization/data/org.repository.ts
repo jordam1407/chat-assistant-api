@@ -11,7 +11,7 @@ export class OrgRepository {
 		return await this.orgRepo.create(data)
 	}
 
-	async findOrgById(id: string) {
+	async findOrgById(id: string): Promise<Org> {
 		return await this.orgRepo.findOne({ orgId: id })
 	}
 

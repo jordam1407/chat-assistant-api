@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { OpenAiService } from '@src/modules/openai/service/openai.service'
+import { Org } from '@src/modules/organization/data/org.schema'
 import { OrgService } from '@src/modules/organization/service/org.service'
 import { Thread } from '@src/modules/thread/schemas/thread.schema'
 import {
@@ -28,10 +29,7 @@ export class ThreadService implements IThreadService {
 	async fetchAnswer({ message, orgId, tId }: IFetchAnserReq): Promise<IFetchAnswerResponse> {
 		this.threadId = tId
 		const org = await this.orgService.findOrgById(orgId)
-
-		if (!org) {
-			throw new NotFoundException('No such organization')
-		}
+		this.validateOrg(org)
 
 		if (!this.threadId) {
 			this.threadId = await this.openAiAdapter.createThread()
@@ -40,7 +38,10 @@ export class ThreadService implements IThreadService {
 
 		await this.openAiAdapter.createMessage({ threadId: this.threadId, message: message })
 
-		const { message: answer, tokens } = await this.openAiAdapter.getAssistantResponse({ threadId: this.threadId })
+		const { message: answer, tokens } = await this.openAiAdapter.getAssistantResponse({
+			threadId: this.threadId,
+			assistantId: org.assistantId,
+		})
 
 		await this.updateThread(this.threadId, tokens)
 
@@ -193,6 +194,15 @@ export class ThreadService implements IThreadService {
 			averageTokensPerThread: percentChange(current.averageTokensPerThread, lastPeriod.averageTokensPerThread),
 			averagePricePerThread: percentChange(current.averagePricePerThread, lastPeriod.averagePricePerThread),
 			averageMessagePerThread: percentChange(current.averageMessagePerThread, lastPeriod.averageMessagePerThread),
+		}
+	}
+
+	private validateOrg(org: Org) {
+		if (!org) {
+			throw new NotFoundException('No such organization')
+		}
+		if (!org.subscriptionActive) {
+			throw new UnauthorizedException('This subscription is inactive')
 		}
 	}
 }

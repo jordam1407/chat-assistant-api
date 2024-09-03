@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
 import { OrgRepository } from '@src/modules/organization/data/org.repository'
 import { Org } from '@src/modules/organization/data/org.schema'
 
@@ -24,5 +24,21 @@ export class OrgService {
 
 	async updateSubscription(id: string, data: Pick<Org, 'subscriptionActive'>) {
 		return await this.orgRepo.updateSubscription(id, data)
+	}
+
+	async startChat(id: string) {
+		const org = await this.findOrgById(id)
+		this.startChatValidation(org)
+		return org
+	}
+
+	private startChatValidation(org: Org) {
+		if (!org) {
+			throw new NotFoundException()
+		}
+
+		if (!org.subscriptionActive) {
+			throw new ForbiddenException('Subscription inactive')
+		}
 	}
 }

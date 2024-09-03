@@ -6,18 +6,22 @@ import { Run } from 'openai/resources/beta/threads/runs/runs'
 export class OpenAiService {
 	private openai: OpenAI
 	private model: string
-	private assistant: string
 
 	constructor() {
 		this.openai = new OpenAI({
 			apiKey: 'sk-proj-j0ggz4BetKPhPDAuykmAT3BlbkFJnE3484f9cVGSi92V8yrB',
 		})
 		this.model = 'gpt-4o-mini'
-		this.assistant = 'asst_yyEF3Z29cD0olDWtanbJ6cSS'
 	}
 
-	async getAssistantResponse({ threadId }: { threadId: string }): Promise<IFetchAnswerResponse & { tokens: number }> {
-		const run = await this.createRun({ assistantId: this.assistant, threadId })
+	async getAssistantResponse({
+		threadId,
+		assistantId,
+	}: {
+		threadId: string
+		assistantId: string
+	}): Promise<IFetchAnswerResponse & { tokens: number }> {
+		const run = await this.createRun({ assistantId, threadId })
 
 		if (run.status === 'completed') {
 			const messages = await this.getMessages({ threadId })
@@ -51,7 +55,6 @@ export class OpenAiService {
 	async createRun({ assistantId, threadId }: { assistantId: string; threadId: string }): Promise<Run> {
 		const run = await this.openai.beta.threads.runs.createAndPoll(threadId, {
 			assistant_id: assistantId,
-			instructions: this.generateInstructions('WAspeed'),
 			tools: [{ type: 'file_search', file_search: { max_num_results: 1 } }],
 		})
 		return run
@@ -66,7 +69,7 @@ export class OpenAiService {
 	}
 
 	private generateInstructions(companyName: string) {
-		return `You are Speed, an assistant responsible for handling customer interactions on any type of communication tool for ${companyName}. Any questions most likely to be about ${companyName}, try to understand the request with file retrieval. Your responsibilities include sales, post-sale, FAQ, customer support, and addressing all other user requests. You should respond concisely and as briefly as possible to address customer requests. You are not allowed to answer questions outside the scope of the ${companyName} company be polite about it. Respond using MARKDOWN only, for empty lines include a black line. In case you cant provide a apropriate answer you can ask the user to provide more information. After that or if the user ask to contact human support yo u provide the on a markdown syntax saying Falar com Suporte: https://wa.me/+553195968976?text=Ol%C3%A1%2C%20vim%20da%20intelig%C3%AAncia%20artificial.`
+		return `You are Speed, an assistant responsible for handling customer interactions on any type of communication tool for ${companyName}. Any vague or out of context questions most likely to be about ${companyName}, try to understand the request with file retrieval. Your responsibilities include sales, post-sale, FAQ, customer support, and addressing all other user requests. You should respond concisely and as briefly as possible to address customer requests. You are not allowed to answer questions outside the scope of the ${companyName} company be polite about it. Respond using MARKDOWN only, for empty lines include a black line. In case you cant provide a apropriate answer you can ask the user to provide more information. After that or if the user ask to contact human support yo u provide the on a markdown syntax saying Falar com Suporte: https://wa.me/+553195968976?text=Ol%C3%A1%2C%20vim%20da%20intelig%C3%AAncia%20artificial.`
 	}
 
 	private sanitizeMessage(message: string) {

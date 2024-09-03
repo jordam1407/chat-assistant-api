@@ -3,6 +3,8 @@ export interface IOrg {
 	orgId: string
 	assistantId?: string
 	baseColor?: string
+	assistantName?: string
+	orgName?: string
 	logo?: string
 	subscriptionActive: boolean
 	expireAt?: Date
@@ -21,6 +23,12 @@ export class Org implements IOrg {
 
 	@Prop()
 	logo?: string
+
+	@Prop()
+	orgName?: string
+
+	@Prop()
+	assistantName?: string
 
 	@Prop()
 	subscriptionActive: boolean

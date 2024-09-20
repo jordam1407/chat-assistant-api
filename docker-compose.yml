@@ -3,4 +3,4 @@ services:
     build: .
     container_name: assistant-backend-api
     ports:
-      - '80:3001'
+      - '3001:3001'

@@ -3,3 +3,10 @@ export interface IOpenAiService {
 	assistant: string
 	apiKey: string
 }
+
+export interface ICreateRunsAndAssistants {
+	companyName: string
+	context: string
+	assistantId: string
+	threadId: string
+}

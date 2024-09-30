@@ -5,9 +5,10 @@ import configuration from '@src/config/core/environment.config'
 import { MongoModule } from '@src/config/database/mongo.module'
 import { ThrottlerConfigModule } from '@src/config/security/throttler.module'
 import { AuthModule } from '@src/modules/auth/auth.module'
+import { KnowledgeBaseModule } from '@src/modules/knowledge-base/knowledge-base.module'
 import { ThreadModule } from '@src/modules/thread/thread.module'
 
-const API_MODULES = [ThreadModule, AuthModule]
+const API_MODULES = [ThreadModule, AuthModule, KnowledgeBaseModule]
 
 const APIs = ['assistants']
 

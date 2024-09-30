@@ -1,3 +1,5 @@
+import { Logger } from '@nestjs/common'
+import { ICreateRunsAndAssistants } from '@src/modules/openai/types/openai.types'
 import { IFetchAnswerResponse } from '@src/modules/thread/service/thread.interface'
 import OpenAI from 'openai'
 import { Message, MessagesPage } from 'openai/resources/beta/threads/messages'
@@ -6,22 +8,22 @@ import { Run } from 'openai/resources/beta/threads/runs/runs'
 export class OpenAiService {
 	private openai: OpenAI
 	private model: string
+	private readonly logger = new Logger(OpenAiService.name)
 
 	constructor() {
 		this.openai = new OpenAI({
 			apiKey: 'sk-proj-j0ggz4BetKPhPDAuykmAT3BlbkFJnE3484f9cVGSi92V8yrB',
 		})
-		this.model = 'gpt-4o-mini'
+		this.model = 'gpt-4o-mini-2024-07-18'
 	}
 
 	async getAssistantResponse({
 		threadId,
 		assistantId,
-	}: {
-		threadId: string
-		assistantId: string
-	}): Promise<IFetchAnswerResponse & { tokens: number }> {
-		const run = await this.createRun({ assistantId, threadId })
+		companyName,
+		context,
+	}: ICreateRunsAndAssistants): Promise<IFetchAnswerResponse & { tokens: number }> {
+		const run = await this.createRun({ assistantId, threadId, companyName, context })
 
 		if (run.status === 'completed') {
 			const messages = await this.getMessages({ threadId })
@@ -52,24 +54,43 @@ export class OpenAiService {
 		return await this.openai.beta.threads.messages.list(threadId)
 	}
 
-	async createRun({ assistantId, threadId }: { assistantId: string; threadId: string }): Promise<Run> {
+	async createRun({ assistantId, threadId, companyName, context }: ICreateRunsAndAssistants): Promise<Run> {
+		const instructions = this.generateInstructions({ companyName, context })
+		this.logger.debug(instructions)
+
 		const run = await this.openai.beta.threads.runs.createAndPoll(threadId, {
+			instructions,
 			assistant_id: assistantId,
-			tools: [{ type: 'file_search', file_search: { max_num_results: 1 } }],
 		})
 		return run
 	}
 
-	async createAssistant({ companyName }: { companyName: string }) {
+	async createAssistant({ companyName, context }: ICreateRunsAndAssistants) {
 		return await this.openai.beta.assistants.create({
-			instructions: this.generateInstructions(companyName),
+			instructions: this.generateInstructions({ companyName, context }),
 			model: this.model,
-			tools: [{ type: 'file_search', file_search: { max_num_results: 5 } }],
 		})
 	}
 
-	private generateInstructions(companyName: string) {
-		return `You are Speed, an assistant responsible for handling customer interactions on any type of communication tool for ${companyName}. Any vague or out of context questions most likely to be about ${companyName}, try to understand the request with file retrieval. Your responsibilities include sales, post-sale, FAQ, customer support, and addressing all other user requests. You should respond concisely and as briefly as possible to address customer requests. You are not allowed to answer questions outside the scope of the ${companyName} company be polite about it. Respond using MARKDOWN only, for empty lines include a black line. In case you cant provide a apropriate answer you can ask the user to provide more information. After that or if the user ask to contact human support yo u provide the on a markdown syntax saying Falar com Suporte: https://wa.me/+553195968976?text=Ol%C3%A1%2C%20vim%20da%20intelig%C3%AAncia%20artificial.`
+	private generateInstructions({ companyName, context }: Partial<ICreateRunsAndAssistants>) {
+		return `<instruction>
+					1. You are a helpfull human like assistant for ${companyName}. Read the user's query carefully and identify if it relates to ${companyName}'s services and offerings.
+					2. If the query is clear and specific, provide a concise and accurate response based on the information available about ${companyName}.
+					3. Do not use words like context or training data when responding. You can say you do not have all the information but do not indicate that you are not a reliable source.
+					4. If the user provides insufficient information, politely ask for more details to clarify their request.
+					5. If the user requests to speak to human support, include the following link in your response: [Falar com Suporte](https://wa.me/+553195968976?text=Ol%C3%A1%2C%20vim%20da%20intelig%C3%AAncia%20artificial).
+					6. Maintain a polite and professional tone throughout the interaction, especially when declining to answer out-of-scope questions.
+					7. Ensure that the output does not contain any XML tags.
+
+				</instruction>
+
+				<context>
+					${context}: Relevant ${companyName} documentation context to be used to answer the user query, retrieved through similarity search.
+				</context>
+
+				<output>
+					{{response}}: The concise and relevant response to the user's query, or a request for more information if needed.
+				</output>`
 	}
 
 	private sanitizeMessage(message: string) {

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
+import { KnowledgeBaseService } from '@src/modules/knowledge-base/service/knowledge-base.service'
 import { OpenAiService } from '@src/modules/openai/service/openai.service'
 import { Org } from '@src/modules/organization/data/org.schema'
 import { OrgService } from '@src/modules/organization/service/org.service'
@@ -23,7 +24,8 @@ export class ThreadService implements IThreadService {
 	constructor(
 		@InjectModel(Thread.name) private readonly threadModel: Model<Thread>,
 		private readonly openAiAdapter: OpenAiService,
-		private readonly orgService: OrgService
+		private readonly orgService: OrgService,
+		private readonly knowledgeBase: KnowledgeBaseService
 	) {}
 
 	async fetchAnswer({ message, orgId, tId }: IFetchAnserReq): Promise<IFetchAnswerResponse> {
@@ -38,9 +40,13 @@ export class ThreadService implements IThreadService {
 
 		await this.openAiAdapter.createMessage({ threadId: this.threadId, message: message })
 
+		const context = await this.knowledgeBase.searchVector(message)
+
 		const { message: answer, tokens } = await this.openAiAdapter.getAssistantResponse({
 			threadId: this.threadId,
 			assistantId: org.assistantId,
+			companyName: org.orgName,
+			context: context.map((item, i) => `Citation${i + 1}: ${item.pageContent}`).join(`\n\n`),
 		})
 
 		await this.updateThread(this.threadId, tokens)

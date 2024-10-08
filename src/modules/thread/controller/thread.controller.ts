@@ -2,18 +2,12 @@ import { Body, Controller, Get, Inject, Param, Post, Query } from '@nestjs/commo
 import { GetOrgId } from '@src/core/decorators/get-org-id.decorator'
 import { Public } from '@src/modules/auth/decorators/auth.decorator'
 import { IThreadRequestDto, UsageQueryDto } from '@src/modules/thread/dto/thread.request.dto'
-import {
-	IFetchAnswerResponse,
-	IThreadById,
-	IThreadList,
-	IThreadService,
-	IUsage,
-} from '@src/modules/thread/service/thread.interface'
+import { IFetchAnswerResponse, IThreadById, IThreadList, IUsage } from '@src/modules/thread/service/thread.interface'
 import { ThreadService } from '@src/modules/thread/service/thread.service'
 
 @Controller('thread')
 export class ThreadController {
-	constructor(@Inject(ThreadService) private readonly threadService: IThreadService) {}
+	constructor(@Inject(ThreadService) private readonly threadService: ThreadService) {}
 
 	@Public()
 	@Post()
@@ -36,5 +30,11 @@ export class ThreadController {
 	async getUsage(@Query() query: UsageQueryDto, @GetOrgId() orgId: string): Promise<IUsage> {
 		const { startDate, endDate } = query
 		return this.threadService.getUsage({ startDate, endDate, orgId })
+	}
+
+	@Get('populate')
+	async updateThreads(@GetOrgId() orgId: string): Promise<IThreadList> {
+		console.log(orgId)
+		return this.threadService.populateThreads(orgId)
 	}
 }

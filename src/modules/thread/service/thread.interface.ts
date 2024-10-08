@@ -1,5 +1,5 @@
-import { Thread } from '@src/modules/thread/schemas/thread.schema'
-import { Message } from 'openai/resources/beta/threads/messages'
+import { Thread } from '@src/modules/thread/data/thread.schema'
+import { IMessage } from '@src/modules/thread/types/core.types'
 
 export interface IThreadService {
 	fetchAnswer({ message, orgId, tId }: IFetchAnserReq): Promise<IFetchAnswerResponse>
@@ -29,13 +29,13 @@ export interface IUsageItems {
 }
 
 export interface IThreadById {
-	thread: { messages: Pick<Message, 'content' | 'created_at' | 'role'>[]; totalCost: number; totalTokens: number }
+	thread: { messages: IMessage[]; totalCost: number; totalTokens: number }
 }
 
 export interface IThreadList {
 	threads: Thread[]
 }
 export interface IFetchAnswerResponse {
-	message: Pick<Message, 'content' | 'created_at' | 'role'>
+	message: string
 	threadId: string
 }

@@ -4,7 +4,8 @@ import { KnowledgeBaseModule } from '@src/modules/knowledge-base/knowledge-base.
 import { OpenAiModule } from '@src/modules/openai/openai.module'
 import { OrgModule } from '@src/modules/organization/org.module'
 import { ThreadController } from '@src/modules/thread/controller/thread.controller'
-import { Thread, ThreadSchema } from '@src/modules/thread/schemas/thread.schema'
+import { ThreadRepository } from '@src/modules/thread/data/thread.repository'
+import { Thread, ThreadSchema } from '@src/modules/thread/data/thread.schema'
 import { ThreadService } from '@src/modules/thread/service/thread.service'
 
 @Module({
@@ -15,8 +16,8 @@ import { ThreadService } from '@src/modules/thread/service/thread.service'
 		KnowledgeBaseModule,
 	],
 	controllers: [ThreadController],
-	providers: [ThreadService],
+	providers: [ThreadService, ThreadRepository],
 
-	exports: [ThreadService],
+	exports: [ThreadService, ThreadRepository],
 })
 export class ThreadModule {}

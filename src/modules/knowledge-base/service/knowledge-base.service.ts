@@ -13,11 +13,12 @@ export class KnowledgeBaseService {
 		private readonly vectorRepo: VectorRepository
 	) {}
 
-	async processFiles(files: Array<Express.Multer.File>) {
+	async processFiles(files: Array<Express.Multer.File>, orgId: string) {
 		const processedChunks: { filename: string; success: boolean }[] = []
 		for (const file of files) {
 			const currentFileId = uuidv4()
 			const { chunk, error } = await this.fileService.processDocx(file)
+			console.log(chunk)
 			if (error) {
 				return
 			}
@@ -25,23 +26,28 @@ export class KnowledgeBaseService {
 
 			const embedChunk = chunk.map((chunk, index) => {
 				return <InsertChunkData>{
+					id: uuidv4(),
 					pageContent: chunk,
 					vector: embeddings[index],
-					metadata: { filename: file.originalname, fileId: currentFileId },
+					metadata: { fileName: file.originalname, fileId: currentFileId },
 				}
 			})
 
 			processedChunks.push({
-				success: (await this.vectorRepo.insertChunks(embedChunk)) ? true : false,
+				success: (await this.vectorRepo.insertChunks(embedChunk, orgId)) ? true : false,
 				filename: file.originalname,
 			})
 		}
 		return processedChunks
 	}
 
-	async searchVector(query: string) {
+	async searchVector(query: string, orgId: string) {
 		const vector = await this.embeddingService.embedQuery(query)
-		const searchResult = await this.vectorRepo.similaritySearch(vector)
+		const searchResult = await this.vectorRepo.similaritySearch(vector, orgId)
 		return searchResult
+	}
+
+	async deleteByFileId(fileId: string): Promise<void> {
+		await this.vectorRepo.deleteByFileId(fileId)
 	}
 }

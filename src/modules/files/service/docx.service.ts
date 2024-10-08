@@ -7,7 +7,7 @@ export class DocxLoaderService {
 	async getUnfilteredChunks({
 		fileBufferOrUrl,
 		chunkSize = 1500,
-		chunkOverlap = 0,
+		chunkOverlap = 200,
 	}: {
 		fileBufferOrUrl: string | Buffer
 		chunkSize?: number
@@ -17,6 +17,7 @@ export class DocxLoaderService {
 		const chunker = new RecursiveCharacterTextSplitter({
 			chunkSize: chunkSize,
 			chunkOverlap: chunkOverlap,
+			separators: ['\n\n'],
 		})
 
 		const { getTextExtractor } = await import('office-text-extractor')
@@ -25,9 +26,9 @@ export class DocxLoaderService {
 			type: isUrl ? 'url' : 'file',
 		})
 
-		const cleanedText = cleanString(docxParsed)
-		const chunks = await chunker.splitText(cleanedText)
+		const chunks = await chunker.splitText(docxParsed)
+		const cleanedChunks = chunks.map((chunk) => cleanString(chunk))
 
-		return chunks
+		return cleanedChunks
 	}
 }

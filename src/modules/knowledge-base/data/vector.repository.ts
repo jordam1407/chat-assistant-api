@@ -10,35 +10,36 @@ export class VectorRepository {
 
 	constructor(@InjectModel(Vector.name) private readonly vectorModel: Model<Vector>) {}
 
-	async insertChunks(chunks: InsertChunkData[]): Promise<number> {
+	async insertChunks(chunks: InsertChunkData[], orgId: string): Promise<number> {
 		this.logger.debug(`Inserting ${chunks.length} chunks`)
 		const insertResult = await this.vectorModel.insertMany(
 			chunks.map((chunk) => ({
 				fileId: chunk.metadata.fileId,
-				fileName: chunk.metadata.filename,
+				fileName: chunk.metadata.fileName,
 				vector: chunk.vector,
 				pageContent: chunk.pageContent,
+				organizationId: orgId,
 			}))
 		)
 		return insertResult.length
 	}
 
-	async similaritySearch(query: number[]): Promise<ExtractChunkData[]> {
+	async similaritySearch(query: number[], orgId: string): Promise<ExtractChunkData[]> {
 		this.logger.debug(`Performing similarity search with vector size ${query.length}`)
-
 		const result = await this.vectorModel.aggregate([
 			{
 				$vectorSearch: {
 					index: 'vector_index',
+					filter: { organizationId: 'c48e4ac0-a4bb-4bb5-9c5e-24de94eeccc1' },
 					path: 'vector',
 					queryVector: query,
-					numCandidates: 12,
-					limit: 6,
+					numCandidates: 100,
+					limit: 3,
 				},
 			},
 			{
 				$project: {
-					_id: 0,
+					_id: 1,
 					pageContent: 1,
 					fileName: 1,
 					fileId: 1,
@@ -52,13 +53,30 @@ export class VectorRepository {
 		return result
 	}
 
+	async getChunkById(chunkId: string) {
+		return await this.vectorModel.findById(chunkId)
+	}
+
+	async updateChunk(chukId: string, newChunk: InsertChunkData) {
+		return await this.vectorModel.findByIdAndUpdate(
+			chukId,
+			{
+				fileId: newChunk.metadata.fileId,
+				fileName: newChunk.metadata.filename,
+				vector: newChunk.vector,
+				pageContent: newChunk.pageContent,
+			},
+			{ new: true, runValidators: true }
+		)
+	}
+
 	async getVectorCount(): Promise<number> {
 		return this.vectorModel.countDocuments()
 	}
 
 	async deleteByFileId(fileId: string): Promise<boolean> {
 		this.logger.debug(`Deleting vectors for fileId: ${fileId}`)
-		const result = await this.vectorModel.deleteMany({ 'metadata.fileId': fileId })
+		const result = await this.vectorModel.deleteMany({ fileId: fileId })
 		return result.deletedCount > 0
 	}
 

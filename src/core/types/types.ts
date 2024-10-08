@@ -1,17 +1,18 @@
-export type Metadata<T> = T & { fileId: string; filename: string }
+export type Metadata<T> = T & { fileId: string; fileName: string }
 
 export type InsertChunkData<
 	Meta extends Record<string, string | number | boolean> = Record<string, string | number | boolean>,
 > = {
+	id: string
 	vector: number[]
 	pageContent: string
 	metadata: Metadata<Meta>
 }
 
-export type ExtractChunkData<
-	Meta extends Record<string, string | number | boolean> = Record<string, string | number | boolean>,
-> = {
+export type ExtractChunkData = {
 	score: number
+	_id: string
 	pageContent: string
-	metadata: Metadata<Meta>
+	fileName: string
+	fileId: string
 }

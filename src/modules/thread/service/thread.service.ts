@@ -1,28 +1,27 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common'
-import { InjectModel } from '@nestjs/mongoose'
 import { KnowledgeBaseService } from '@src/modules/knowledge-base/service/knowledge-base.service'
 import { OpenAiService } from '@src/modules/openai/service/openai.service'
 import { Org } from '@src/modules/organization/data/org.schema'
 import { OrgService } from '@src/modules/organization/service/org.service'
-import { Thread } from '@src/modules/thread/schemas/thread.schema'
+import { ThreadRepository } from '@src/modules/thread/data/thread.repository'
+import { Message, SourceDetail } from '@src/modules/thread/data/thread.schema'
 import {
 	IFetchAnserReq,
 	IFetchAnswerResponse,
 	IThreadById,
 	IThreadList,
-	IThreadService,
 	IUsage,
 	IUsageItems,
 } from '@src/modules/thread/service/thread.interface'
-import { Model } from 'mongoose'
+import { v4 as uuidv4 } from 'uuid'
 
 @Injectable()
-export class ThreadService implements IThreadService {
+export class ThreadService {
 	private threadId: string
 	private modelPrice = 0.15 / 1000000
 
 	constructor(
-		@InjectModel(Thread.name) private readonly threadModel: Model<Thread>,
+		private readonly threadModel: ThreadRepository,
 		private readonly openAiAdapter: OpenAiService,
 		private readonly orgService: OrgService,
 		private readonly knowledgeBase: KnowledgeBaseService
@@ -34,37 +33,56 @@ export class ThreadService implements IThreadService {
 		this.validateOrg(org)
 
 		if (!this.threadId) {
-			this.threadId = await this.openAiAdapter.createThread()
-			await this.createThread(this.threadId, orgId)
+			const newId = uuidv4()
+			this.threadId = newId
+			await this.threadModel.createThread({
+				threadId: newId,
+				orgId,
+			})
 		}
 
-		await this.openAiAdapter.createMessage({ threadId: this.threadId, message: message })
-
-		const context = await this.knowledgeBase.searchVector(message)
-
-		const { message: answer, tokens } = await this.openAiAdapter.getAssistantResponse({
+		const context = await this.knowledgeBase.searchVector(message, orgId)
+		await this.threadModel.addEntryToThread({
 			threadId: this.threadId,
-			assistantId: org.assistantId,
-			companyName: org.orgName,
-			context: context.map((item, i) => `Citation${i + 1}: ${item.pageContent}`).join(`\n\n`),
+			message: new Message({
+				content: message,
+				role: 'user',
+			}),
 		})
 
-		await this.updateThread(this.threadId, tokens)
+		const { output: answer, tokens } = await this.openAiAdapter.completion({
+			companyName: org.orgName,
+			context: context.map((item, i) => `Citation${i + 1}: ${item.pageContent}`).join(`\n\n`),
+			pastMessages: (await this.threadModel.getConversation(this.threadId)).messages,
+		})
+
+		await this.threadModel.addEntryToThread({
+			message: new Message({
+				content: answer,
+				role: 'assistant',
+				sources: context.map((source) => {
+					return new SourceDetail({
+						chunkId: source._id,
+						filename: source.fileName,
+						fileId: source.fileId,
+					})
+				}),
+			}),
+			threadId: this.threadId,
+			cost: this.calculatePriceByTokens(tokens),
+			tokens,
+		})
 
 		return { message: answer, threadId: this.threadId }
 	}
 
 	async getThreadById(tId: string): Promise<IThreadById> {
-		const threadMessages = await this.openAiAdapter.getMessages({ threadId: tId })
+		const threadMessages = await this.threadModel.getConversation(tId)
 		const { totalCost, totalTokens } = await this.calculateTokensForThread(tId)
 
 		return {
 			thread: {
-				messages: threadMessages.data.map((message) => ({
-					content: message.content,
-					created_at: message.created_at,
-					role: message.role,
-				})),
+				messages: threadMessages.messages,
 				totalCost,
 				totalTokens,
 			},
@@ -72,88 +90,33 @@ export class ThreadService implements IThreadService {
 	}
 
 	async listThreads(orgId: string): Promise<IThreadList> {
-		return { threads: await this.threadModel.find({ organizationId: orgId }) }
+		return await this.threadModel.listThreads(orgId)
 	}
 
-	async createThread(threadId: string, organizationId: string): Promise<void> {
-		await this.threadModel.create({ threadId, organizationId })
-	}
+	async populateThreads(orgId: string) {
+		const threads = await this.threadModel.listThreads(orgId)
+		for (const thread of threads.threads) {
+			const { data } = await this.openAiAdapter.getMessages({ threadId: thread.threadId })
+			console.log(data[0].role)
 
-	async updateThread(threadId: string, tokens: number): Promise<void> {
-		await this.threadModel.findOneAndUpdate(
-			{ threadId: threadId },
-			{
-				$inc: {
-					totalTokens: tokens,
-					cost: tokens * this.modelPrice,
-					totalMessages: 2,
-				},
-			},
-			{ new: true, useFindAndModify: false }
-		)
-	}
-
-	private async aggregateUsageItems({
-		endDate,
-		orgId,
-		startDate,
-	}: {
-		startDate?: Date
-		endDate?: Date
-		orgId: string
-	}): Promise<IUsageItems> {
-		const matchStage =
-			startDate && endDate
-				? {
-						createdAt: {
-							$gte: startDate,
-							$lte: endDate,
-						},
-					}
-				: {}
-
-		const pipeline = [
-			{ $match: { ...matchStage, organizationId: orgId } },
-			{
-				$group: {
-					_id: null,
-					totalTokens: { $sum: '$totalTokens' },
-					totalThreads: { $sum: 1 },
-					totalPrice: { $sum: '$cost' }, // assuming cost is the total cost per thread
-					totalMessages: { $sum: '$totalMessages' },
-				},
-			},
-			{
-				$project: {
-					_id: 0,
-					totalTokens: 1,
-					totalThreads: 1,
-					totalPrice: 1,
-					averageTokensPerThread: { $divide: [{ $ifNull: ['$totalTokens', 0] }, { $ifNull: ['$totalThreads', 1] }] },
-					averagePricePerThread: { $divide: [{ $ifNull: ['$totalPrice', 0] }, { $ifNull: ['$totalThreads', 1] }] },
-					averageMessagePerThread: { $divide: [{ $ifNull: ['$totalMessages', 0] }, { $ifNull: ['$totalThreads', 1] }] },
-				},
-			},
-		]
-
-		const result = await this.threadModel.aggregate(pipeline)
-
-		if (result.length === 0) {
-			return {
-				totalTokens: 0,
-				totalThreads: 0,
-				totalPrice: 0,
-				averageTokensPerThread: 0,
-				averagePricePerThread: 0,
-				averageMessagePerThread: 0,
-			}
+			for (const message of data.reverse())
+				await this.threadModel.addEntryToThread({
+					threadId: thread.threadId,
+					message: new Message({
+						content: 'text' in message.content[0] ? message.content[0].text.value : '',
+						role: message.role,
+					}),
+				})
 		}
+		return threads
+	}
 
-		return result[0] as IUsageItems
+	private async aggregateUsageItems(filter: { startDate?: Date; endDate?: Date; orgId: string }): Promise<IUsageItems> {
+		return await this.threadModel.aggregateUsageItems(filter)
 	}
 
 	private async calculateTokensForThread(threadId: string): Promise<{ totalTokens: number; totalCost: number }> {
-		const thread = await this.threadModel.findOne({ threadId })
+		const thread = await this.threadModel.getConversation(threadId)
 
 		if (!thread) {
 			return {
@@ -210,5 +173,9 @@ export class ThreadService implements IThreadService {
 		if (!org.subscriptionActive) {
 			throw new UnauthorizedException('This subscription is inactive')
 		}
+	}
+
+	private calculatePriceByTokens(tokens: number) {
+		return tokens * this.modelPrice
 	}
 }

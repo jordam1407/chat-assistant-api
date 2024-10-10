@@ -30,11 +30,11 @@ export class VectorRepository {
 			{
 				$vectorSearch: {
 					index: 'vector_index',
-					filter: { organizationId: 'c48e4ac0-a4bb-4bb5-9c5e-24de94eeccc1' },
+					filter: { organizationId: orgId },
 					path: 'vector',
 					queryVector: query,
 					numCandidates: 100,
-					limit: 3,
+					limit: 5,
 				},
 			},
 			{
@@ -57,12 +57,10 @@ export class VectorRepository {
 		return await this.vectorModel.findById(chunkId)
 	}
 
-	async updateChunk(chukId: string, newChunk: InsertChunkData) {
+	async updateChunk(chukId: string, newChunk: Pick<InsertChunkData, 'pageContent' | 'vector'>) {
 		return await this.vectorModel.findByIdAndUpdate(
 			chukId,
 			{
-				fileId: newChunk.metadata.fileId,
-				fileName: newChunk.metadata.filename,
 				vector: newChunk.vector,
 				pageContent: newChunk.pageContent,
 			},

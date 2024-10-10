@@ -50,4 +50,16 @@ export class KnowledgeBaseService {
 	async deleteByFileId(fileId: string): Promise<void> {
 		await this.vectorRepo.deleteByFileId(fileId)
 	}
+
+	async getChunkById(id: string) {
+		return await this.vectorRepo.getChunkById(id)
+	}
+
+	async updateChunkById(id: string, newChunkText: string) {
+		const newChunkEmbeding = await this.embeddingService.embedDocuments([newChunkText])
+
+		const newChunk = { pageContent: newChunkText, vector: newChunkEmbeding[0] }
+
+		return await this.vectorRepo.updateChunk(id, newChunk)
+	}
 }

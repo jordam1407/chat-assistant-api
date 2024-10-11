@@ -24,6 +24,16 @@ export class VectorRepository {
 		return insertResult.length
 	}
 
+	async insertChunk(chunk: InsertChunkData, orgId: string) {
+		return await this.vectorModel.create({
+			fileId: chunk.metadata.fileId,
+			fileName: chunk.metadata.fileName,
+			vector: chunk.vector,
+			pageContent: chunk.pageContent,
+			organizationId: orgId,
+		})
+	}
+
 	async similaritySearch(query: number[], orgId: string): Promise<ExtractChunkData[]> {
 		this.logger.debug(`Performing similarity search with vector size ${query.length}`)
 		const result = await this.vectorModel.aggregate([
@@ -70,6 +80,10 @@ export class VectorRepository {
 
 	async getVectorCount(): Promise<number> {
 		return this.vectorModel.countDocuments()
+	}
+
+	async getAllChunks({ orgId }: { orgId: string }): Promise<Vector[]> {
+		return this.vectorModel.find({ organizationId: orgId }).select('-vector')
 	}
 
 	async deleteByFileId(fileId: string): Promise<boolean> {

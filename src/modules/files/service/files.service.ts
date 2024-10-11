@@ -14,4 +14,14 @@ export class FilesService {
 			return { error: 'Failed to extract text' }
 		}
 	}
+
+	async processText(text: string) {
+		try {
+			const chunk = await this.docxLoader.splitText(text)
+			return { chunk }
+		} catch (error) {
+			console.error(`Error processing chunk`, error)
+			return { error: 'Failed to extract text' }
+		}
+	}
 }

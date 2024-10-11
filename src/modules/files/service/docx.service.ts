@@ -31,4 +31,16 @@ export class DocxLoaderService {
 
 		return cleanedChunks
 	}
+
+	async splitText(text: string) {
+		const chunker = new RecursiveCharacterTextSplitter({
+			chunkSize: 1800,
+			chunkOverlap: 200,
+			separators: ['\n\n'],
+		})
+
+		const chunks = await chunker.splitText(text)
+
+		return chunks.map((chunk) => cleanString(chunk))
+	}
 }

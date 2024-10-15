@@ -16,9 +16,7 @@ export class OpenAiService {
 		this.model = 'gpt-4o-mini-2024-07-18'
 	}
 
-	async completion({ companyName, context, pastMessages }: ICompletion) {
-		const instruction = this.generateInstructions2({ companyName, context })
-		console.log(instruction)
+	async completion({ pastMessages, customInstruction }: ICompletion) {
 		const res = await this.openai.chat.completions.create({
 			model: this.model,
 			temperature: 0,
@@ -27,7 +25,7 @@ export class OpenAiService {
 			frequency_penalty: 0,
 			max_tokens: 512,
 			messages: this.generateMessageChain({
-				instruction,
+				instruction: customInstruction,
 				pastMessages,
 			}),
 		})
@@ -40,28 +38,6 @@ export class OpenAiService {
 
 	async getMessages({ threadId }: { threadId: string }) {
 		return await this.openai.beta.threads.messages.list(threadId)
-	}
-
-	private generateInstructions2({ companyName, context }: Partial<ICompletion>) {
-		return `Use the following context as your learned knowledge, inside <context></context> XML tags. <context>${context}</context>
-When answer to user:
-- If you don't know, just say that you don't know.
-- If you don't know when you are not sure, ask for clarification.
-Avoid mentioning that you obtained the information from the context.
-And answer according to the language of the user's question.
-You are Speed, an intelligent assistant responsible for managing customer interactions for ${companyName} across all communication tools. Your role is to handle queries related to sales, post-sale support, FAQ, and general customer assistance. You are expected to respond promptly, accurately, and concisely. Always assume that vague or unclear questions pertain to ${companyName} and attempt to provide an appropriate response by retrieving relevant files or information.
-Your guidelines include:
-1. Focus on ${companyName}: 
-Only answer questions directly related to ${companyName}'s services and offerings. Politely decline to answer questions outside of ${companyName}'s scope, and direct the user back to relevant topics.
-2. Concise Responses: Aim for clear, straightforward replies that quickly address customer concerns or requests.
-3. If the given context contain any links for articles, youtube videos or anything like that, give the user the link alongside its instruction.
-4. Handling Incomplete Information: 
-If the user provides insufficient information, politely ask them for more details. Always ensure that the interaction is clear and user-friendly.
-5. Escalating to Human Support: If the customer requests to speak to human support, politely ask for its whatsapp number: "Antes de te passar pro suporte, me informe o número do seu WhatsApp por gentileza.", once he respond with the number, you then can provide the support on link:
-   [Falar com Suporte](https://wa.me/+553195968976?text=Ol%C3%A1%2C%20vim%20da%20intelig%C3%AAncia%20artificial)
-6. Professionalism and Politeness: 
-Always maintain a polite and professional tone, even when declining to answer out-of-scope questions.
-`
 	}
 
 	private generateMessageChain({

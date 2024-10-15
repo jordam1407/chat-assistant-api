@@ -7,7 +7,6 @@ export interface IOpenAiService {
 }
 
 export interface ICompletion {
-	companyName: string
-	context: string
 	pastMessages: IMessage[]
+	customInstruction: string
 }

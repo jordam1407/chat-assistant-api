@@ -16,9 +16,6 @@ export class Org implements IOrg {
 	orgId: string
 
 	@Prop()
-	assistantId?: string
-
-	@Prop()
 	baseColor?: string
 
 	@Prop()
@@ -29,6 +26,12 @@ export class Org implements IOrg {
 
 	@Prop()
 	assistantName?: string
+
+	@Prop()
+	instruction?: string
+
+	@Prop()
+	support?: string
 
 	@Prop()
 	subscriptionActive: boolean

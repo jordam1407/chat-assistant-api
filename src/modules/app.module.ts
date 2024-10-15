@@ -1,6 +1,5 @@
 import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
-import { APP_GUARD } from '@nestjs/core'
 import { validate } from '@src/config/core/env.validation'
 import configuration from '@src/config/core/environment.config'
 import { MongoModule } from '@src/config/database/mongo.module'

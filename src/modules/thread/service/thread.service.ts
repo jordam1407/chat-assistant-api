@@ -51,8 +51,12 @@ export class ThreadService {
 		})
 
 		const { output: answer, tokens } = await this.openAiAdapter.completion({
-			companyName: org.orgName,
-			context: context.map((item, i) => `Citation${i + 1}: ${item.pageContent}`).join(`\n\n`),
+			customInstruction: this.generateInstructions({
+				companyName: org.orgName,
+				context: context.map((item, i) => `Citation${i + 1}: ${item.pageContent}`).join(`\n\n`),
+				instruction: org.instruction,
+				supportContact: org.support,
+			}),
 			pastMessages: (await this.threadModel.getConversation(this.threadId)).messages,
 		})
 
@@ -177,5 +181,24 @@ export class ThreadService {
 
 	private calculatePriceByTokens(tokens: number) {
 		return tokens * this.modelPrice
+	}
+
+	private generateInstructions({
+		companyName,
+		context,
+		instruction,
+		supportContact,
+	}: {
+		instruction: string
+		companyName: string
+		context: string
+		supportContact: string
+	}): string {
+		const formattedInstruction = instruction
+			.replace(/\${companyName}/g, companyName)
+			.replace(/\${context}/g, context)
+			.replace(/\${supportContact}/g, supportContact)
+
+		return formattedInstruction
 	}
 }

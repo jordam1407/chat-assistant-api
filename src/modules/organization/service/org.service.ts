@@ -18,10 +18,6 @@ export class OrgService {
 		return await this.orgRepo.updateBrand(id, data)
 	}
 
-	async updateAssistant(id: string, data: Pick<Org, 'assistantId'>) {
-		return await this.orgRepo.updateAssistant(id, data)
-	}
-
 	async updateSubscription(id: string, data: Pick<Org, 'subscriptionActive'>) {
 		return await this.orgRepo.updateSubscription(id, data)
 	}

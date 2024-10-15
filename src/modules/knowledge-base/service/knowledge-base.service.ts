@@ -4,6 +4,7 @@ import { EmbeddingService } from '@src/modules/embeddinng/service/embedding.serv
 import { FilesService } from '@src/modules/files/service/files.service'
 import { cleanString } from '@src/modules/files/util/string'
 import { VectorRepository } from '@src/modules/knowledge-base/data/vector.repository'
+import path from 'path'
 import { v4 as uuidv4 } from 'uuid'
 
 @Injectable()
@@ -17,15 +18,29 @@ export class KnowledgeBaseService {
 	async processFiles(files: Array<Express.Multer.File>, orgId: string) {
 		const processedChunks: { filename: string; success: boolean }[] = []
 		for (const file of files) {
+			let chunkToEmbed: string[]
+			let error: string
+
 			const currentFileId = uuidv4()
-			const { chunk, error } = await this.fileService.processDocx(file)
-			console.log(chunk)
+			if (path.extname(file.originalname) === 'docx') {
+				const { chunk, error: processError } = await this.fileService.processDocx(file)
+				chunkToEmbed = chunk
+				error = processError
+			}
+
+			if (path.extname(file.originalname) === 'pdf') {
+				const { chunk, error: processError } = await this.fileService.processPdf(file)
+				chunkToEmbed = chunk
+				error = processError
+			}
+
 			if (error) {
 				return
 			}
-			const embeddings = await this.embeddingService.embedDocuments(chunk)
 
-			const embedChunk = chunk.map((chunk, index) => {
+			const embeddings = await this.embeddingService.embedDocuments(chunkToEmbed)
+
+			const embedChunk = chunkToEmbed.map((chunk, index) => {
 				return <InsertChunkData>{
 					id: uuidv4(),
 					pageContent: chunk,
@@ -44,6 +59,27 @@ export class KnowledgeBaseService {
 
 	async addNewTextDocument({ orgId, text, title }: { text: string; orgId: string; title: string }) {
 		const { chunk, error } = await this.fileService.processText(text)
+		if (error) {
+			throw new InternalServerErrorException(error)
+		}
+
+		const embeddings = await this.embeddingService.embedDocuments(chunk)
+		const currentFileId = uuidv4()
+
+		const embedChunk = chunk.map((chunk, index) => {
+			return <InsertChunkData>{
+				id: uuidv4(),
+				pageContent: chunk,
+				vector: embeddings[index],
+				metadata: { fileName: title, fileId: currentFileId },
+			}
+		})
+
+		return await this.vectorRepo.insertChunks(embedChunk, orgId)
+	}
+
+	async addContextFromYoutubeVideo(url: string, orgId: string, title: string) {
+		const { chunk, error } = await this.fileService.processYoutubeVideo(url)
 		if (error) {
 			throw new InternalServerErrorException(error)
 		}

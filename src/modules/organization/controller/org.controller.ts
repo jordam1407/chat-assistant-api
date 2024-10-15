@@ -12,11 +12,6 @@ export class OrgController {
 		return this.orgService.createOrg(data)
 	}
 
-	@Post('/assistant')
-	async updateAssistant(@Body() { orgId, assistantId }: { orgId: string; assistantId: string }) {
-		return this.orgService.updateAssistant(orgId, { assistantId })
-	}
-
 	@Get(':id')
 	async getOrg(@Query() orgId: string) {
 		return this.orgService.findOrgById(orgId)

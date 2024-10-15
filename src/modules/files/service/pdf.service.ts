@@ -1,9 +1,8 @@
-import { Injectable } from '@nestjs/common'
-import { cleanString, isValidURL } from '@src/modules/files/util/string'
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter'
 
-@Injectable()
-export class DocxLoaderService {
+import { cleanString, isValidURL } from '@src/modules/files/util/string'
+
+export class PdfLoaderService {
 	async getUnfilteredChunks({
 		fileBufferOrUrl,
 		chunkSize = 1800,
@@ -14,6 +13,7 @@ export class DocxLoaderService {
 		chunkOverlap?: number
 	}) {
 		const isUrl = typeof fileBufferOrUrl === 'string' && isValidURL(fileBufferOrUrl)
+
 		const chunker = new RecursiveCharacterTextSplitter({
 			chunkSize: chunkSize,
 			chunkOverlap: chunkOverlap,
@@ -21,26 +21,11 @@ export class DocxLoaderService {
 		})
 
 		const { getTextExtractor } = await import('office-text-extractor')
-		const docxParsed = await getTextExtractor().extractText({
-			input: fileBufferOrUrl,
-			type: isUrl ? 'url' : 'file',
-		})
+		const pdfParsed = await getTextExtractor().extractText({ input: fileBufferOrUrl, type: isUrl ? 'url' : 'file' })
 
-		const chunks = await chunker.splitText(docxParsed)
+		const chunks = await chunker.splitText(cleanString(pdfParsed))
 		const cleanedChunks = chunks.map((chunk) => cleanString(chunk))
 
 		return cleanedChunks
-	}
-
-	async splitText(text: string) {
-		const chunker = new RecursiveCharacterTextSplitter({
-			chunkSize: 1800,
-			chunkOverlap: 200,
-			separators: ['\n\n'],
-		})
-
-		const chunks = await chunker.splitText(text)
-
-		return chunks.map((chunk) => cleanString(chunk))
 	}
 }

@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt'
 import { Request } from 'express'
 import { ConfigService } from '@nestjs/config'
 import { IS_PUBLIC_KEY } from '../decorators/auth.decorator'
+import { IS_API_KEY } from '@src/core/decorators/api-key-decorator'
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -22,7 +23,18 @@ export class AuthGuard implements CanActivate {
 			return true
 		}
 
+		const isApiKey = this.reflector.getAllAndOverride<boolean>(IS_API_KEY, [context.getHandler(), context.getClass()])
+
 		const request = context.switchToHttp().getRequest()
+
+		if (isApiKey) {
+			const apiKey = request.headers['x-api-key']
+			if (!apiKey || apiKey !== this.configService.get<string>('API_KEY')) {
+				throw new UnauthorizedException('Invalid or missing API key')
+			}
+			return true
+		}
+
 		const token = this.extractTokenFromHeader(request)
 		if (!token) {
 			throw new UnauthorizedException()

@@ -36,7 +36,7 @@ export class VectorRepository {
 
 	async similaritySearch(query: number[], orgId: string): Promise<ExtractChunkData[]> {
 		this.logger.debug(`Performing similarity search with vector size ${query.length}`)
-		const result = await this.vectorModel.aggregate([
+		const results = await this.vectorModel.aggregate([
 			{
 				$vectorSearch: {
 					index: 'vector_index',
@@ -60,7 +60,11 @@ export class VectorRepository {
 			},
 		])
 
-		return result
+		for (const result of results) {
+			await this.vectorModel.updateOne({ _id: result._id }, { $inc: { hitCount: 1 } })
+		}
+
+		return results
 	}
 
 	async getChunkById(chunkId: string) {
@@ -90,10 +94,5 @@ export class VectorRepository {
 		this.logger.debug(`Deleting vectors for fileId: ${fileId}`)
 		const result = await this.vectorModel.deleteMany({ fileId: fileId })
 		return result.deletedCount > 0
-	}
-
-	async reset(): Promise<void> {
-		this.logger.debug(`Resetting vector collection`)
-		await this.vectorModel.deleteMany({})
 	}
 }

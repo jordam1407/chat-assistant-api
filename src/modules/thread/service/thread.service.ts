@@ -1,7 +1,10 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common'
+import { EventEmitter2 } from '@nestjs/event-emitter'
+import { ExtractChunkData } from '@src/core/types/types'
 import { KnowledgeBaseService } from '@src/modules/knowledge-base/service/knowledge-base.service'
 import { OpenAiService } from '@src/modules/openai/service/openai.service'
 import { Org } from '@src/modules/organization/data/org.schema'
+import { ConsumeCreditEvent } from '@src/modules/organization/events/consume-credit.event'
 import { OrgService } from '@src/modules/organization/service/org.service'
 import { ThreadRepository } from '@src/modules/thread/data/thread.repository'
 import { Message, SourceDetail } from '@src/modules/thread/data/thread.schema'
@@ -24,7 +27,8 @@ export class ThreadService {
 		private readonly threadModel: ThreadRepository,
 		private readonly openAiAdapter: OpenAiService,
 		private readonly orgService: OrgService,
-		private readonly knowledgeBase: KnowledgeBaseService
+		private readonly knowledgeBase: KnowledgeBaseService,
+		private readonly eventEmitter: EventEmitter2
 	) {}
 
 	async fetchAnswer({ message, orgId, tId }: IFetchAnserReq): Promise<IFetchAnswerResponse> {
@@ -40,8 +44,18 @@ export class ThreadService {
 				orgId,
 			})
 		}
+		const needContext = await this.openAiAdapter.queryClassification(
+			new Message({
+				content: message,
+				role: 'user',
+			})
+		)
+		let context: ExtractChunkData[]
 
-		const context = await this.knowledgeBase.searchVector(message, orgId)
+		if (needContext) {
+			context = await this.knowledgeBase.searchVector(message, orgId)
+		}
+
 		await this.threadModel.addEntryToThread({
 			threadId: this.threadId,
 			message: new Message({
@@ -53,7 +67,7 @@ export class ThreadService {
 		const { output: answer, tokens } = await this.openAiAdapter.completion({
 			customInstruction: this.generateInstructions({
 				companyName: org.orgName,
-				context: context.map((item, i) => `Citation${i + 1}: ${item.pageContent}`).join(`\n\n`),
+				context: needContext ? context.map((item, i) => `Citation${i + 1}: ${item.pageContent}`).join(`\n\n`) : '',
 				instruction: org.instruction,
 				supportContact: org.support,
 			}),
@@ -64,18 +78,22 @@ export class ThreadService {
 			message: new Message({
 				content: answer,
 				role: 'assistant',
-				sources: context.map((source) => {
-					return new SourceDetail({
-						chunkId: source._id,
-						filename: source.fileName,
-						fileId: source.fileId,
-					})
-				}),
+				sources: needContext
+					? context.map((source) => {
+							return new SourceDetail({
+								chunkId: source._id,
+								filename: source.fileName,
+								fileId: source.fileId,
+							})
+						})
+					: [],
 			}),
 			threadId: this.threadId,
 			cost: this.calculatePriceByTokens(tokens),
 			tokens,
 		})
+
+		this.eventEmitter.emit('consume.credit', new ConsumeCreditEvent(orgId))
 
 		return { message: answer, threadId: this.threadId }
 	}

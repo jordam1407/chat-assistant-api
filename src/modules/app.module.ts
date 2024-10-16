@@ -1,5 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
+import { EventEmitterModule } from '@nestjs/event-emitter'
 import { validate } from '@src/config/core/env.validation'
 import configuration from '@src/config/core/environment.config'
 import { MongoModule } from '@src/config/database/mongo.module'
@@ -20,6 +21,7 @@ const APIs = ['assistants']
 			load: [configuration],
 			validate,
 		}),
+		EventEmitterModule.forRoot(),
 		ThrottlerConfigModule,
 		MongoModule,
 		...API_MODULES,

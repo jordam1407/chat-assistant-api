@@ -16,6 +16,25 @@ export class OpenAiService {
 		this.model = 'gpt-4o-mini-2024-07-18'
 	}
 
+	async queryClassification(message: IMessage) {
+		const res = await this.openai.chat.completions.create({
+			model: this.model,
+			temperature: 0,
+			top_p: 1,
+			presence_penalty: 0,
+			frequency_penalty: 0,
+			max_tokens: 512,
+			response_format: { type: 'json_object' },
+			messages: this.generateMessageChain({
+				instruction:
+					'Classify the query as either needing context or being a common conversation. return in JSON format: {"shouldRetrieve": boolean}.',
+				pastMessages: [message],
+			}),
+		})
+
+		return JSON.parse(res.choices[0].message.content).shouldRetrieve
+	}
+
 	async completion({ pastMessages, customInstruction }: ICompletion) {
 		const res = await this.openai.chat.completions.create({
 			model: this.model,

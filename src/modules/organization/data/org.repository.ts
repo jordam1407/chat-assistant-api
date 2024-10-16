@@ -22,4 +22,8 @@ export class OrgRepository {
 	async updateSubscription(id: string, data: Pick<Org, 'subscriptionActive'>) {
 		return await this.orgRepo.updateOne({ orgId: id }, data)
 	}
+
+	async consumeCredit(id: string) {
+		return await this.orgRepo.updateOne({ orgId: id }, { $inc: { credits: -1 } })
+	}
 }

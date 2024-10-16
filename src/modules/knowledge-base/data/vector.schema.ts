@@ -19,6 +19,9 @@ export class Vector {
 
 	@Prop({ required: true })
 	pageContent: string
+
+	@Prop({ required: true })
+	hitCount: number
 }
 
 export const VectorSchema = SchemaFactory.createForClass(Vector)

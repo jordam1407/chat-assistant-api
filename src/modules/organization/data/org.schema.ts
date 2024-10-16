@@ -37,6 +37,9 @@ export class Org implements IOrg {
 	subscriptionActive: boolean
 
 	@Prop()
+	credits: number
+
+	@Prop()
 	expireAt?: Date
 }
 

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common'
 import { EventEmitter2 } from '@nestjs/event-emitter'
+import { BASE_INSTRUCTION } from '@src/core/constants/instruction'
 import { ExtractChunkData } from '@src/core/types/types'
 import { KnowledgeBaseService } from '@src/modules/knowledge-base/service/knowledge-base.service'
 import { OpenAiService } from '@src/modules/openai/service/openai.service'
@@ -68,7 +69,7 @@ export class ThreadService {
 			customInstruction: this.generateInstructions({
 				companyName: org.orgName,
 				context: needContext ? context.map((item, i) => `Citation${i + 1}: ${item.pageContent}`).join(`\n\n`) : '',
-				instruction: org.instruction,
+				instruction: org.instruction ?? BASE_INSTRUCTION,
 				supportContact: org.support,
 			}),
 			pastMessages: (await this.threadModel.getConversation(this.threadId)).messages,

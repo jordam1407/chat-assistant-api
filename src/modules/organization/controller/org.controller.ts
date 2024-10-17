@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post } from '@nestjs/common'
+import { GetOrgId } from '@src/core/decorators/get-org-id.decorator'
 import { Public } from '@src/modules/auth/decorators/auth.decorator'
 import { IOrg } from '@src/modules/organization/data/org.schema'
 import { OrgService } from '@src/modules/organization/service/org.service'
@@ -12,9 +13,10 @@ export class OrgController {
 		return this.orgService.createOrg(data)
 	}
 
-	@Get(':id')
-	async getOrg(@Query() orgId: string) {
-		return this.orgService.findOrgById(orgId)
+	@Get('findOne')
+	async getOrg(@GetOrgId() id: string) {
+		console.log(id)
+		return this.orgService.findOrgById(id)
 	}
 
 	@Public()

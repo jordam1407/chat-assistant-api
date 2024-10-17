@@ -4,12 +4,13 @@ import { OrgController } from '@src/modules/organization/controller/org.controll
 import { OrgRepository } from '@src/modules/organization/data/org.repository'
 import { Org, OrgSchema } from '@src/modules/organization/data/org.schema'
 import { ConsumeCreditListener } from '@src/modules/organization/listener/consume-credit.listener'
+import { CreateOrgListener } from '@src/modules/organization/listener/create-org.listener'
 import { OrgService } from '@src/modules/organization/service/org.service'
 
 @Module({
 	imports: [MongooseModule.forFeature([{ name: Org.name, schema: OrgSchema }])],
 	controllers: [OrgController],
-	providers: [OrgService, OrgRepository, ConsumeCreditListener],
+	providers: [OrgService, OrgRepository, ConsumeCreditListener, CreateOrgListener],
 	exports: [OrgService],
 })
 export class OrgModule {}

@@ -20,7 +20,7 @@ export class Vector {
 	@Prop({ required: true })
 	pageContent: string
 
-	@Prop({ required: true })
+	@Prop({ default: 0 })
 	hitCount: number
 }
 

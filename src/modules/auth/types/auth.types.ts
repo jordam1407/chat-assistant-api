@@ -5,6 +5,7 @@ export interface IAuthAccount {
 	phone: string
 	organizationId: string
 	refreshToken: string | null
+	role: ERoles
 }
 
 export interface ICreateAccount {
@@ -13,4 +14,11 @@ export interface ICreateAccount {
 	name: string
 	organizationId: string
 	phone?: string
+	role: ERoles
+}
+
+export enum ERoles {
+	owner = 'owner',
+	admin = 'admin',
+	user = 'user',
 }

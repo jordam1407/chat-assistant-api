@@ -1,12 +1,15 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
+import { BASE_CREDITS } from '@src/core/constants/base-credits'
 export interface IOrg {
 	orgId: string
-	assistantId?: string
 	baseColor?: string
-	assistantName?: string
-	orgName?: string
 	logo?: string
+	orgName?: string
+	assistantName?: string
+	instruction?: string
+	support?: string
 	subscriptionActive: boolean
+	credits?: number
 	expireAt?: Date
 }
 
@@ -36,8 +39,8 @@ export class Org implements IOrg {
 	@Prop()
 	subscriptionActive: boolean
 
-	@Prop()
-	credits: number
+	@Prop({ default: BASE_CREDITS })
+	credits?: number
 
 	@Prop()
 	expireAt?: Date

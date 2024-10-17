@@ -36,5 +36,9 @@ export class OrgService {
 		if (!org.subscriptionActive) {
 			throw new ForbiddenException('Subscription inactive')
 		}
+
+		if (org.credits < 1) {
+			throw new ForbiddenException('You are out of credits')
+		}
 	}
 }

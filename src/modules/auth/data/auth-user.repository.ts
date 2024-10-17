@@ -23,4 +23,8 @@ export class AuthUserRepository {
 	async create(data: ICreateAccount) {
 		return await this.authUserRepo.create(data)
 	}
+
+	async listByOrg(id: string) {
+		return await this.authUserRepo.find({ organizationId: id }).select(['-password', '-refreshToken', '-__v'])
+	}
 }

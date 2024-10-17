@@ -1,9 +1,13 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common'
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { EventEmitter2 } from '@nestjs/event-emitter'
 import { JwtService } from '@nestjs/jwt'
+import { BASE_CREDITS } from '@src/core/constants/base-credits'
 import { AuthUserRepository } from '@src/modules/auth/data/auth-user.repository'
-import { SignUpReqDTO } from '@src/modules/auth/dto/auth.request.dto'
+import { createUserForOrgDto, SignUpReqDTO } from '@src/modules/auth/dto/auth.request.dto'
 import { AuthUserResponseDTO } from '@src/modules/auth/dto/auth.response.dto'
+import { ERoles } from '@src/modules/auth/types/auth.types'
+import { CreateOrgEvent } from '@src/modules/organization/events/create-org.event'
 import * as bcrypt from 'bcryptjs'
 import { v4 as uuidv4 } from 'uuid'
 @Injectable()
@@ -11,13 +15,14 @@ export class AuthService {
 	constructor(
 		private authRepo: AuthUserRepository,
 		private jwtService: JwtService,
-		private env: ConfigService
+		private env: ConfigService,
+		private readonly eventEmitter: EventEmitter2
 	) {}
 
-	async signUp({ email, name, password, phone }: SignUpReqDTO) {
+	async signUp({ email, name, password, phone, credits = BASE_CREDITS, orgName }: SignUpReqDTO) {
 		const user = await this.authRepo.findByEmail(email)
 		if (user) {
-			throw new UnauthorizedException('User already exists')
+			throw new ConflictException('User already exists')
 		}
 
 		const hashedPassword = await this.generateHash(password)
@@ -29,7 +34,19 @@ export class AuthService {
 			name,
 			phone,
 			organizationId,
+			role: ERoles.owner,
 		})
+
+		this.eventEmitter.emit(
+			'create.org',
+			new CreateOrgEvent({
+				orgId: newUser.organizationId,
+				subscriptionActive: true,
+				credits,
+				orgName,
+				support: newUser.phone,
+			})
+		)
 
 		const userId = newUser._id.toString()
 
@@ -50,10 +67,34 @@ export class AuthService {
 				phone,
 				refreshToken,
 				organizationId: newUser.organizationId,
+				role: newUser.role,
 			},
 		})
 
 		return data
+	}
+
+	async createForOrg({ email, name, password, orgId }: createUserForOrgDto & { orgId: string }) {
+		const user = await this.authRepo.findByEmail(email)
+		if (user) {
+			throw new ConflictException('User already exists')
+		}
+
+		const hashedPassword = await this.generateHash(password)
+
+		await this.authRepo.create({
+			email,
+			password: hashedPassword,
+			name,
+			organizationId: orgId,
+			role: ERoles.user,
+		})
+
+		return
+	}
+
+	async listByOrgId(id: string, userId: string) {
+		return (await this.authRepo.listByOrg(id)).filter((item) => item.id !== userId)
 	}
 
 	async signIn(email: string, pass: string): Promise<AuthUserResponseDTO> {
@@ -85,6 +126,7 @@ export class AuthService {
 				phone: user.phone,
 				refreshToken,
 				organizationId: user.organizationId,
+				role: user.role,
 			},
 		})
 
@@ -124,6 +166,7 @@ export class AuthService {
 				phone: user.phone,
 				refreshToken,
 				organizationId: user.organizationId,
+				role: user.role,
 			},
 		})
 

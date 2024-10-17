@@ -1,6 +1,6 @@
-import { ICreateAccount } from '@src/modules/auth/types/auth.types'
+import { ERoles, ICreateAccount } from '@src/modules/auth/types/auth.types'
 
-export class SignUpReqDTO implements Omit<ICreateAccount, 'organizationId'> {
+export class SignUpReqDTO implements Omit<ICreateAccount, 'organizationId' | 'role'> {
 	email: string
 
 	password: string
@@ -8,6 +8,20 @@ export class SignUpReqDTO implements Omit<ICreateAccount, 'organizationId'> {
 	name: string
 
 	phone?: string
+
+	credits?: number
+
+	orgName: string
+}
+
+export class createUserForOrgDto {
+	email: string
+
+	password: string
+
+	name: string
+
+	role: ERoles
 }
 
 export class LoginDto {

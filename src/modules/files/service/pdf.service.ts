@@ -23,7 +23,7 @@ export class PdfLoaderService {
 		const { getTextExtractor } = await import('office-text-extractor')
 		const pdfParsed = await getTextExtractor().extractText({ input: fileBufferOrUrl, type: isUrl ? 'url' : 'file' })
 
-		const chunks = await chunker.splitText(cleanString(pdfParsed))
+		const chunks = await chunker.splitText(pdfParsed)
 		const cleanedChunks = chunks.map((chunk) => cleanString(chunk))
 
 		return cleanedChunks

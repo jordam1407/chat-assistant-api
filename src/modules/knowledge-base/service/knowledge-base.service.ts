@@ -22,13 +22,13 @@ export class KnowledgeBaseService {
 			let error: string
 
 			const currentFileId = uuidv4()
-			if (path.extname(file.originalname) === 'docx') {
+			if (path.extname(file.originalname) === '.docx') {
 				const { chunk, error: processError } = await this.fileService.processDocx(file)
 				chunkToEmbed = chunk
 				error = processError
 			}
 
-			if (path.extname(file.originalname) === 'pdf') {
+			if (path.extname(file.originalname) === '.pdf') {
 				const { chunk, error: processError } = await this.fileService.processPdf(file)
 				chunkToEmbed = chunk
 				error = processError

@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common'
+import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { EventEmitter2 } from '@nestjs/event-emitter'
 import { JwtService } from '@nestjs/jwt'
@@ -171,6 +171,51 @@ export class AuthService {
 		})
 
 		return data
+	}
+
+	async updateUser({
+		name,
+		newPassword,
+		password,
+		userId,
+	}: {
+		userId: string
+		name?: string
+		password?: string
+		newPassword?: string
+	}) {
+		const user = await this.authRepo.findById(userId)
+
+		if (!user) {
+			throw new UnauthorizedException('Invalid credentials')
+		}
+
+		if (password || newPassword) {
+			if (!password || !newPassword) {
+				throw new BadRequestException('Both current password and new password must be provided')
+			}
+
+			const passwordMatch = await bcrypt.compare(password, user.password as string)
+			if (!passwordMatch) {
+				throw new UnauthorizedException('Invalid credentials')
+			}
+		}
+
+		const updatedFields: Partial<{ name: string; password: string }> = {}
+
+		if (name && name.trim()) {
+			updatedFields.name = name.trim()
+		}
+
+		if (newPassword && newPassword.trim()) {
+			updatedFields.password = await this.generateHash(newPassword)
+		}
+
+		if (Object.keys(updatedFields).length === 0) {
+			throw new BadRequestException('No valid fields to update')
+		}
+
+		return await this.authRepo.updateById(userId, updatedFields)
 	}
 
 	private async updateRefreshToken(userId: string, refreshToken: string) {

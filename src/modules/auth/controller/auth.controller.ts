@@ -42,4 +42,10 @@ export class AuthController {
 	refresh(@Body() refreshReqDto: { refreshToken: string }): Promise<AuthUserResponseDTO> {
 		return this.authService.refresh(refreshReqDto.refreshToken)
 	}
+
+	@HttpCode(HttpStatus.OK)
+	@Post('update-user')
+	updateUser(@Body() body: { name: string; password: string; newPassword: string }, @GetUserId() userId: string) {
+		return this.authService.updateUser({ userId, ...body })
+	}
 }

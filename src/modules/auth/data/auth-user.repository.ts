@@ -8,6 +8,10 @@ import { Model, Types } from 'mongoose'
 export class AuthUserRepository {
 	constructor(@InjectModel(AuthUser.name) private authUserRepo: Model<AuthUser>) {}
 
+	async findById(userId: string) {
+		return await this.authUserRepo.findOne({ _id: new Types.ObjectId(userId) })
+	}
+
 	async findByEmail(email: string) {
 		return await this.authUserRepo.findOne({ email })
 	}

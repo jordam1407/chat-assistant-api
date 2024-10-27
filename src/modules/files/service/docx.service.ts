@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { cleanString, isValidURL } from '@src/modules/files/util/string'
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter'
+import { convert } from 'html-to-text'
 
 @Injectable()
 export class DocxLoaderService {
@@ -39,7 +40,7 @@ export class DocxLoaderService {
 			separators: ['\n\n'],
 		})
 
-		const chunks = await chunker.splitText(text)
+		const chunks = await chunker.splitText(convert(text))
 
 		return chunks.map((chunk) => cleanString(chunk))
 	}

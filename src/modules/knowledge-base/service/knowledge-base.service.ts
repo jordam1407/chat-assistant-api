@@ -99,6 +99,36 @@ export class KnowledgeBaseService {
 		return await this.vectorRepo.insertChunks(embedChunk, orgId)
 	}
 
+	async addNewWebPage(urls: string[], orgId: string, title: string) {
+		const processedChunks: { filename: string; success: boolean }[] = []
+
+		for (const url of urls) {
+			const currentFileId = uuidv4()
+
+			const { chunk, error } = await this.fileService.processWebUrl(url)
+
+			if (error) {
+				return
+			}
+
+			const embeddings = await this.embeddingService.embedDocuments(chunk)
+
+			const embedChunk = chunk.map((chunk, index) => {
+				return <InsertChunkData>{
+					id: uuidv4(),
+					pageContent: chunk,
+					vector: embeddings[index],
+					metadata: { fileName: title, fileId: currentFileId },
+				}
+			})
+			processedChunks.push({
+				success: (await this.vectorRepo.insertChunks(embedChunk, orgId)) ? true : false,
+				filename: title,
+			})
+		}
+		return processedChunks
+	}
+
 	async searchVector(query: string, orgId: string) {
 		const vector = await this.embeddingService.embedQuery(query)
 		const searchResult = await this.vectorRepo.similaritySearch(vector, orgId)

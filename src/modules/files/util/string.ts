@@ -1,17 +1,15 @@
-// import { Message } from '../global/types.js'
+export function truncateCenterString(fullStr: string, strLen: number, separator?: string) {
+	if (fullStr.length <= strLen) return fullStr
 
-// export function truncateCenterString(fullStr: string, strLen: number, separator?: string) {
-// 	if (fullStr.length <= strLen) return fullStr
+	separator = separator || '...'
 
-// 	separator = separator || '...'
+	const sepLen = separator.length,
+		charsToShow = strLen - sepLen,
+		frontChars = Math.ceil(charsToShow / 2),
+		backChars = Math.floor(charsToShow / 2)
 
-// 	var sepLen = separator.length,
-// 		charsToShow = strLen - sepLen,
-// 		frontChars = Math.ceil(charsToShow / 2),
-// 		backChars = Math.floor(charsToShow / 2)
-
-// 	return fullStr.substr(0, frontChars) + separator + fullStr.substr(fullStr.length - backChars)
-// }
+	return fullStr.substr(0, frontChars) + separator + fullStr.substr(fullStr.length - backChars)
+}
 
 export function cleanString(text: string) {
 	text = text.replace(/\\/g, '')

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { DocxLoaderService } from '@src/modules/files/service/docx.service'
 import { PdfLoaderService } from '@src/modules/files/service/pdf.service'
+import { WebLoaderService } from '@src/modules/files/service/web.service'
 import { YoutubeLoaderService } from '@src/modules/files/service/youtube.service'
 
 @Injectable()
@@ -8,7 +9,8 @@ export class FilesService {
 	constructor(
 		private readonly docxLoader: DocxLoaderService,
 		private readonly pdfLoader: PdfLoaderService,
-		private readonly youtubeLoader: YoutubeLoaderService
+		private readonly youtubeLoader: YoutubeLoaderService,
+		private readonly webLoader: WebLoaderService
 	) {}
 
 	async processDocx(file: Express.Multer.File): Promise<{ chunk?: string[]; error?: string }> {
@@ -48,6 +50,16 @@ export class FilesService {
 		} catch (error) {
 			console.error(`Error processing chunk`, error)
 			return { error: 'Failed to extract text from youtube video' }
+		}
+	}
+
+	async processWebUrl(url: string) {
+		try {
+			const chunk = await this.webLoader.getUnfilteredChunks({ webUrl: url })
+			return { chunk }
+		} catch (error) {
+			console.error(`Error processing chunk`, error)
+			return { error: 'Failed to extract text from webpage' }
 		}
 	}
 }

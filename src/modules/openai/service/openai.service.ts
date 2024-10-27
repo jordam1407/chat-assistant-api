@@ -27,7 +27,7 @@ export class OpenAiService {
 			response_format: { type: 'json_object' },
 			messages: this.generateMessageChain({
 				instruction:
-					'Classify the query as either needing context or being a common conversation. return in JSON format: {"shouldRetrieve": boolean}.',
+					'Classify the query as either needing context or being a common conversation, such as greetings or small talk. return in JSON format: {"shouldRetrieve": boolean}.',
 				pastMessages: [message],
 			}),
 		})

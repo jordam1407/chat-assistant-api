@@ -1,6 +1,7 @@
 import { FilesInterceptor } from '@nest-lab/fastify-multer'
 import { Body, Controller, Get, Param, Patch, Post, UploadedFiles, UseInterceptors } from '@nestjs/common'
 import { GetOrgId } from '@src/core/decorators/get-org-id.decorator'
+import { Public } from '@src/modules/auth/decorators/auth.decorator'
 import { KnowledgeBaseService } from '@src/modules/knowledge-base/service/knowledge-base.service'
 
 @Controller('knowledge-base')
@@ -16,6 +17,12 @@ export class KnowledgeBaseController {
 	@Post('youtube-text')
 	async processYoutubeVideo(@Body() { url, title }: { url: string; title: string }, @GetOrgId() orgId: string) {
 		return this.knowledgeBaseService.addContextFromYoutubeVideo(url, orgId, title)
+	}
+
+	@Public()
+	@Post('web-page')
+	async processWebPage(@Body() { url, title }: { url: string[]; title: string }, @GetOrgId() orgId: string) {
+		return this.knowledgeBaseService.addNewWebPage(url, orgId, title)
 	}
 
 	@Post('query')

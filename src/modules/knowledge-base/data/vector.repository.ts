@@ -59,9 +59,8 @@ export class VectorRepository {
 				},
 			},
 		])
-
 		for (const result of results) {
-			await this.vectorModel.updateOne({ _id: result._id }, { $inc: { hitCount: 1 } })
+			void this.vectorModel.updateOne({ _id: result._id }, { $inc: { hitCount: 1 } })
 		}
 
 		return results

@@ -25,9 +25,10 @@ export class KnowledgeBaseController {
 		return this.knowledgeBaseService.addNewWebPage(url, orgId, title)
 	}
 
+	@Public()
 	@Post('query')
-	async getVector(@Body() body: { query: string }, @GetOrgId() orgId: string) {
-		return this.knowledgeBaseService.searchVector(body.query, orgId)
+	async getVector(@Body() body: { query: string; orgId: string }) {
+		return this.knowledgeBaseService.searchVector(body.query, body.orgId)
 	}
 
 	@Post('deleteMany')

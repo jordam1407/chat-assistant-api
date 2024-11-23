@@ -8,9 +8,10 @@ import { ThrottlerConfigModule } from '@src/config/security/throttler.module'
 import { AuthModule } from '@src/modules/auth/auth.module'
 import { InstructionModule } from '@src/modules/instructions/instructions.module'
 import { KnowledgeBaseModule } from '@src/modules/knowledge-base/knowledge-base.module'
+import { QueryClassificationModule } from '@src/modules/queryClassification/queryClassification.module'
 import { ThreadModule } from '@src/modules/thread/thread.module'
 
-const API_MODULES = [ThreadModule, AuthModule, KnowledgeBaseModule, InstructionModule]
+const API_MODULES = [ThreadModule, AuthModule, KnowledgeBaseModule, InstructionModule, QueryClassificationModule]
 
 const APIs = ['assistants']
 

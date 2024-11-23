@@ -11,7 +11,7 @@ export class OpenAiService {
 
 	constructor() {
 		this.openai = new OpenAI({
-			apiKey: 'sk-proj-j0ggz4BetKPhPDAuykmAT3BlbkFJnE3484f9cVGSi92V8yrB',
+			apiKey: process.env.OPENAI_API_KEY,
 		})
 		this.model = 'gpt-4o-mini-2024-07-18'
 	}

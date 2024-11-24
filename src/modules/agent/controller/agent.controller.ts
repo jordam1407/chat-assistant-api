@@ -15,12 +15,12 @@ export class AgentController {
 		return this.agentService.createAgent({ name, tone, objective, systemPrompt, organizationId })
 	}
 
-	@Get()
+	@Get('/:agentId')
 	async getAgentById(@Param('agentId') agentId: string): Promise<IAgentById> {
 		return this.agentService.getAgentById(agentId)
 	}
 
-	@Get()
+	@Get('/organization/:orgId')
 	async listAgentsByOrgId(@Param('orgId') orgId: string): Promise<IAgentsList> {
 		return this.agentService.listAgentsByOrgId(orgId)
 	}

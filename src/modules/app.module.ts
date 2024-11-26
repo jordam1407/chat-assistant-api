@@ -9,9 +9,19 @@ import { AgentModule } from '@src/modules/agent/agent.module'
 import { AuthModule } from '@src/modules/auth/auth.module'
 import { InstructionModule } from '@src/modules/instructions/instructions.module'
 import { KnowledgeBaseModule } from '@src/modules/knowledge-base/knowledge-base.module'
+import { ObjectiveModule } from '@src/modules/objective/objective.module'
 import { ThreadModule } from '@src/modules/thread/thread.module'
+import { ToneModule } from '@src/modules/tone/tone.module'
 
-const API_MODULES = [ThreadModule, AuthModule, KnowledgeBaseModule, InstructionModule, AgentModule]
+const API_MODULES = [
+	ThreadModule,
+	AuthModule,
+	KnowledgeBaseModule,
+	InstructionModule,
+	AgentModule,
+	ToneModule,
+	ObjectiveModule,
+]
 
 const APIs = ['assistants']
 

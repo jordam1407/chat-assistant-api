@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
-import { ObjectiveEnum, ToneEnum } from '@src/modules/agent/types/core.types'
-import { Document, HydratedDocument } from 'mongoose'
+import { Objective } from '@src/modules/objective/data/objective.schema'
+import { Tone } from '@src/modules/tone/data/tone.schema'
+import mongoose, { Document, HydratedDocument } from 'mongoose'
 import { v4 as uuid } from 'uuid'
 export type AgentDocument = HydratedDocument<Agent>
 
@@ -16,11 +17,11 @@ export class Agent extends Document {
 	@Prop({ required: true })
 	organizationId: string
 
-	@Prop({ default: ToneEnum.Formal, required: true, enum: Object.values(ToneEnum) })
-	tone: ToneEnum
+	@Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Tone', required: true })
+	tone: Tone
 
-	@Prop({ default: ObjectiveEnum.Answer, required: true, enum: Object.values(ObjectiveEnum) })
-	objective: ObjectiveEnum
+	@Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Objective', required: true })
+	objective: Objective
 
 	@Prop({ required: true })
 	systemPrompt: string

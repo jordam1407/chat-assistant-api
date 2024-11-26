@@ -1,9 +1,7 @@
-import { ObjectiveEnum, ToneEnum } from '@src/modules/agent/types/core.types'
-
 export class IAgentRequestDto {
 	name: string
-	tone: ToneEnum
-	objective: ObjectiveEnum
+	toneId: string
+	objectiveId: string
 	systemPrompt: string
 	organizationId: string
 }

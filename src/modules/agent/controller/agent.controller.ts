@@ -10,9 +10,9 @@ export class AgentController {
 
 	@Post()
 	async createAgent(
-		@Body() { name, tone, objective, systemPrompt, organizationId }: IAgentRequestDto
+		@Body() { name, toneId, objectiveId, systemPrompt, organizationId }: IAgentRequestDto
 	): Promise<IAgentResponseDto> {
-		return this.agentService.createAgent({ name, tone, objective, systemPrompt, organizationId })
+		return this.agentService.createAgent({ name, toneId, objectiveId, systemPrompt, organizationId })
 	}
 
 	@Get('/:agentId')

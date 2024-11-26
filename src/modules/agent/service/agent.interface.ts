@@ -1,18 +1,19 @@
 import { Agent } from '@src/modules/agent/data/agent.schema'
 import { IAgentRequestDto } from '@src/modules/agent/dto/agent.request.dto'
 import { IAgentResponseDto } from '@src/modules/agent/dto/agent.response.dto'
-import { ObjectiveEnum, ToneEnum } from '@src/modules/agent/types/core.types'
+import { Objective } from '@src/modules/objective/data/objective.schema'
+import { Tone } from '@src/modules/tone/data/tone.schema'
 
 export interface IAgentService {
-	createAgent({ name, tone, objective, systemPrompt }: IAgentRequestDto): Promise<IAgentResponseDto>
+	createAgent({ name, toneId, objectiveId, systemPrompt }: IAgentRequestDto): Promise<IAgentResponseDto>
 	getAgentById(agentId: string): Promise<IAgentById>
 	listAgentsByOrgId(orgId: string): Promise<IAgentsList>
 }
 
 export interface ICreateAgent {
 	name: string
-	tone: ToneEnum
-	objective: ObjectiveEnum
+	tone: Tone
+	objective: Objective
 	systemPrompt: string
 	organizationId: string
 }
@@ -21,8 +22,8 @@ export interface IAgentById {
 	agent: {
 		agentId: string
 		name: string
-		tone: ToneEnum
-		objective: ObjectiveEnum
+		tone: Tone
+		objective: Objective
 		systemPrompt: string
 	}
 }

@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/co
 import { EventEmitter2 } from '@nestjs/event-emitter'
 import { BASE_INSTRUCTION } from '@src/core/constants/instruction'
 import { ExtractChunkData } from '@src/core/types/types'
-import { AgentRepository } from '@src/modules/agent/data/agent.repository'
+import { AgentService } from '@src/modules/agent/service/agent.service'
 import { KnowledgeBaseService } from '@src/modules/knowledge-base/service/knowledge-base.service'
 import { OpenAiService } from '@src/modules/openai/service/openai.service'
 import { Org } from '@src/modules/organization/data/org.schema'
@@ -27,7 +27,7 @@ export class ThreadService {
 
 	constructor(
 		private readonly threadModel: ThreadRepository,
-		private readonly agentModel: AgentRepository,
+		private readonly agentService: AgentService,
 		private readonly openAiAdapter: OpenAiService,
 		private readonly orgService: OrgService,
 		private readonly knowledgeBase: KnowledgeBaseService,
@@ -37,7 +37,7 @@ export class ThreadService {
 	async fetchAnswer({ message, orgId, tId, agentId }: IFetchAnserReq): Promise<IFetchAnswerResponse> {
 		this.threadId = tId
 		const org = await this.orgService.findOrgById(orgId)
-		const agent = await this.agentModel.getAgentById(agentId)
+		const agent = await this.agentService.getAgentById(agentId)
 		this.validateOrg(org)
 
 		if (!this.threadId) {

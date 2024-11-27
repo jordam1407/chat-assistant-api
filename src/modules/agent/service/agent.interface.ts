@@ -6,7 +6,7 @@ import { Tone } from '@src/modules/tone/data/tone.schema'
 
 export interface IAgentService {
 	createAgent({ name, toneId, objectiveId, systemPrompt }: IAgentRequestDto): Promise<IAgentResponseDto>
-	getAgentById(agentId: string): Promise<IAgentById>
+	getAgentById(agentId: string): Promise<Agent>
 	listAgentsByOrgId(orgId: string): Promise<IAgentsList>
 }
 
@@ -14,18 +14,8 @@ export interface ICreateAgent {
 	name: string
 	tone: Tone
 	objective: Objective
-	systemPrompt: string
-	organizationId: string
-}
-
-export interface IAgentById {
-	agent: {
-		agentId: string
-		name: string
-		tone: Tone
-		objective: Objective
-		systemPrompt: string
-	}
+	systemPrompt?: string
+	orgId: string
 }
 
 export interface IAgentsList {

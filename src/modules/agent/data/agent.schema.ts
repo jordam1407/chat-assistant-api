@@ -14,8 +14,12 @@ export class Agent extends Document {
 	@Prop({ required: true })
 	name: string
 
-	@Prop({ required: true })
-	organizationId: string
+	@Prop({
+		type: String,
+		ref: 'Org',
+		required: true,
+	})
+	orgId: string
 
 	@Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Tone', required: true })
 	tone: Tone

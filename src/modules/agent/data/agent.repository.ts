@@ -14,7 +14,7 @@ export class AgentRepository {
 	}
 
 	async getAgentById(agentId: string): Promise<Agent> {
-		const agent = await this.agentModel.findOne({ agentId }).exec()
+		const agent = (await (await this.agentModel.findOne({ agentId })).populate('Objective')).populate('Tone')
 		return agent
 	}
 

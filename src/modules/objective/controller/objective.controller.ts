@@ -1,10 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
-import { ObjectiveService } from '@src/modules/objective/service/objective.service'
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Public } from '@src/modules/auth/decorators/auth.decorator';
+import { ObjectiveService } from '@src/modules/objective/service/objective.service';
 
 @Controller('objectives')
 export class ObjectiveController {
 	constructor(private readonly objectiveService: ObjectiveService) {}
 
+	@Public()
 	@Post()
 	async create(@Body() createObjectiveDto: { key: string; name: string }) {
 		return this.objectiveService.create(createObjectiveDto.key, createObjectiveDto.name)
@@ -30,6 +32,7 @@ export class ObjectiveController {
 		return this.objectiveService.update(id, updateObjectiveDto)
 	}
 
+	@Public()
 	@Delete(':id')
 	async delete(@Param('id') id: string) {
 		return this.objectiveService.delete(id)

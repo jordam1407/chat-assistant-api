@@ -1,6 +1,6 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
-import { Public } from '@src/modules/auth/decorators/auth.decorator';
-import { ObjectiveService } from '@src/modules/objective/service/objective.service';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
+import { Public } from '@src/modules/auth/decorators/auth.decorator'
+import { ObjectiveService } from '@src/modules/objective/service/objective.service'
 
 @Controller('objectives')
 export class ObjectiveController {

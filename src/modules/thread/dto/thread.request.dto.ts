@@ -5,6 +5,7 @@ export class IThreadRequestDto {
 	message: string
 	threadId?: string
 	orgId: string
+	agentId: string
 }
 
 export class UsageQueryDto {

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/co
 import { EventEmitter2 } from '@nestjs/event-emitter'
 import { BASE_INSTRUCTION } from '@src/core/constants/instruction'
 import { ExtractChunkData } from '@src/core/types/types'
+import { AgentRepository } from '@src/modules/agent/data/agent.repository'
 import { KnowledgeBaseService } from '@src/modules/knowledge-base/service/knowledge-base.service'
 import { OpenAiService } from '@src/modules/openai/service/openai.service'
 import { Org } from '@src/modules/organization/data/org.schema'
@@ -26,15 +27,17 @@ export class ThreadService {
 
 	constructor(
 		private readonly threadModel: ThreadRepository,
+		private readonly agentModel: AgentRepository,
 		private readonly openAiAdapter: OpenAiService,
 		private readonly orgService: OrgService,
 		private readonly knowledgeBase: KnowledgeBaseService,
 		private readonly eventEmitter: EventEmitter2
 	) {}
 
-	async fetchAnswer({ message, orgId, tId }: IFetchAnserReq): Promise<IFetchAnswerResponse> {
+	async fetchAnswer({ message, orgId, tId, agentId }: IFetchAnserReq): Promise<IFetchAnswerResponse> {
 		this.threadId = tId
 		const org = await this.orgService.findOrgById(orgId)
+		const agent = await this.agentModel.getAgentById(agentId)
 		this.validateOrg(org)
 
 		if (!this.threadId) {
@@ -49,7 +52,8 @@ export class ThreadService {
 			new Message({
 				content: message,
 				role: 'user',
-			})
+			}),
+			agent
 		)
 		let context: ExtractChunkData[]
 
@@ -72,6 +76,7 @@ export class ThreadService {
 				instruction: org.instruction ?? BASE_INSTRUCTION,
 				supportContact: org.support,
 			}),
+			agent,
 			pastMessages: (await this.threadModel.getConversation(this.threadId)).messages,
 		})
 

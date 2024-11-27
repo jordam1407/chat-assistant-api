@@ -11,8 +11,8 @@ export class ThreadController {
 
 	@Public()
 	@Post()
-	async createMessage(@Body() { message, orgId, threadId }: IThreadRequestDto): Promise<IFetchAnswerResponse> {
-		return this.threadService.fetchAnswer({ message, orgId, tId: threadId })
+	async createMessage(@Body() { message, orgId, threadId, agentId }: IThreadRequestDto): Promise<IFetchAnswerResponse> {
+		return this.threadService.fetchAnswer({ message, orgId, tId: threadId, agentId })
 	}
 
 	@Public()

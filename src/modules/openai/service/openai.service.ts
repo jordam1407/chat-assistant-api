@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common'
-import { ICompletion } from '@src/modules/openai/types/openai.types'
+import { Agent } from '@src/modules/agent/data/agent.schema'
 import { IMessage } from '@src/modules/thread/types/core.types'
 import { OpenAI } from 'openai'
 import { ChatCompletionMessageParam } from 'openai/src/resources/index.js'
@@ -16,7 +16,7 @@ export class OpenAiService {
 		this.model = 'gpt-4o-mini-2024-07-18'
 	}
 
-	async queryClassification(message: IMessage) {
+	async queryClassification(message: IMessage, agent: Agent): Promise<boolean> {
 		const res = await this.openai.chat.completions.create({
 			model: this.model,
 			temperature: 0,
@@ -24,18 +24,28 @@ export class OpenAiService {
 			presence_penalty: 0,
 			frequency_penalty: 0,
 			max_tokens: 512,
-			response_format: { type: 'json_object' },
 			messages: this.generateMessageChain({
+				agent,
 				instruction:
-					'Classify the query as either needing context or being a common conversation, such as greetings or small talk. return in JSON format: {"shouldRetrieve": boolean}.',
+					'Classify the query as either needing context or being a common conversation, such as greetings or small talk. Return in JSON format: {"shouldRetrieve": boolean}.',
 				pastMessages: [message],
 			}),
 		})
 
-		return JSON.parse(res.choices[0].message.content).shouldRetrieve
+		const content = res.choices[0].message.content
+		this.logger.debug(`Classification result: ${content}`)
+		return JSON.parse(content).shouldRetrieve
 	}
 
-	async completion({ pastMessages, customInstruction }: ICompletion) {
+	async completion({
+		pastMessages,
+		agent,
+		customInstruction,
+	}: {
+		pastMessages: IMessage[]
+		agent: Agent
+		customInstruction: string
+	}): Promise<{ output: string; tokens: number }> {
 		const res = await this.openai.chat.completions.create({
 			model: this.model,
 			temperature: 0,
@@ -44,15 +54,17 @@ export class OpenAiService {
 			frequency_penalty: 0,
 			max_tokens: 512,
 			messages: this.generateMessageChain({
+				agent,
 				instruction: customInstruction,
 				pastMessages,
 			}),
 		})
 
-		return {
-			output: res.choices[0].message.content,
-			tokens: res.usage.total_tokens,
-		}
+		const output = res.choices[0].message.content
+		const tokens = res.usage?.total_tokens || 0
+
+		this.logger.debug(`Generated response: ${output}, Tokens used: ${tokens}`)
+		return { output, tokens }
 	}
 
 	async getMessages({ threadId }: { threadId: string }) {
@@ -60,19 +72,45 @@ export class OpenAiService {
 	}
 
 	private generateMessageChain({
+		agent,
 		instruction,
 		pastMessages = [],
 	}: {
+		agent: Agent
 		instruction: string
 		pastMessages?: IMessage[]
 	}): ChatCompletionMessageParam[] {
-		const messageChain = []
+		const messageChain: ChatCompletionMessageParam[] = []
+
+		if (agent.systemPrompt) {
+			messageChain.push({ role: 'system', content: agent.systemPrompt })
+		}
+
+		if (agent.tone?.name) {
+			messageChain.push({
+				role: 'system',
+				content: `Tone of the conversation: ${agent.tone.name}`,
+			})
+		}
+
+		if (agent.objective?.name) {
+			messageChain.push({
+				role: 'system',
+				content: `Objective: ${agent.objective.name}`,
+			})
+		}
 
 		if (instruction) {
-			messageChain.push({ content: instruction, role: 'system' })
+			messageChain.push({ role: 'system', content: instruction })
 		}
+
 		if (pastMessages.length) {
-			messageChain.push(...pastMessages)
+			messageChain.push(
+				...pastMessages.map((msg) => ({
+					role: msg.role,
+					content: msg.content,
+				}))
+			)
 		}
 		return messageChain
 	}

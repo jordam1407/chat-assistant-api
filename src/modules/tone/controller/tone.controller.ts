@@ -1,12 +1,11 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
-import { Public } from '@src/modules/auth/decorators/auth.decorator'
+import { ApiKey } from '@src/core/decorators/api-key-decorator'
 import { ToneService } from '@src/modules/tone/service/tone.service'
-
+@ApiKey()
 @Controller('tones')
 export class ToneController {
 	constructor(private readonly toneService: ToneService) {}
 
-	@Public()
 	@Post()
 	async create(@Body() createToneDto: { key: string; name: string }) {
 		return this.toneService.create(createToneDto.key, createToneDto.name)

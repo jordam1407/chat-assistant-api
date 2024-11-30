@@ -1,12 +1,13 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
+import { ApiKey } from '@src/core/decorators/api-key-decorator'
 import { Public } from '@src/modules/auth/decorators/auth.decorator'
 import { ObjectiveService } from '@src/modules/objective/service/objective.service'
 
+@ApiKey()
 @Controller('objectives')
 export class ObjectiveController {
 	constructor(private readonly objectiveService: ObjectiveService) {}
 
-	@Public()
 	@Post()
 	async create(@Body() createObjectiveDto: { key: string; name: string }) {
 		return this.objectiveService.create(createObjectiveDto.key, createObjectiveDto.name)

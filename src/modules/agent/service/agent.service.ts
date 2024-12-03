@@ -1,22 +1,18 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { EventEmitter2 } from '@nestjs/event-emitter'
 import { AgentRepository } from '@src/modules/agent/data/agent.repository'
 import { Agent } from '@src/modules/agent/data/agent.schema'
 import { IAgentRequestDto } from '@src/modules/agent/dto/agent.request.dto'
 import { IAgentResponseDto } from '@src/modules/agent/dto/agent.response.dto'
 import { IAgentService, IAgentsList } from '@src/modules/agent/service/agent.interface'
 import { ObjectiveService } from '@src/modules/objective/service/objective.service'
-import { OpenAiService } from '@src/modules/openai/service/openai.service'
 import { ToneService } from '@src/modules/tone/service/tone.service'
 
 @Injectable()
 export class AgentService implements IAgentService {
 	constructor(
 		private readonly agentModel: AgentRepository,
-		private readonly openAiAdapter: OpenAiService,
 		private readonly toneService: ToneService,
-		private readonly objectiveService: ObjectiveService,
-		private readonly eventEmitter: EventEmitter2
+		private readonly objectiveService: ObjectiveService
 	) {}
 
 	async listAgentsByOrgId(orgId: string): Promise<IAgentsList> {
@@ -29,7 +25,17 @@ export class AgentService implements IAgentService {
 		return agent
 	}
 
-	async createAgent({ name, toneId, objectiveId, systemPrompt, orgId }: IAgentRequestDto): Promise<IAgentResponseDto> {
+	async createAgent({
+		name,
+		toneId,
+		objectiveId,
+		systemPrompt,
+		orgId,
+		contact,
+		initialMessage,
+		logo,
+		tooltipMessage,
+	}: IAgentRequestDto): Promise<IAgentResponseDto> {
 		const tone = await this.toneService.findById(toneId)
 		const objective = await this.objectiveService.findById(objectiveId)
 
@@ -47,10 +53,35 @@ export class AgentService implements IAgentService {
 			objective,
 			systemPrompt,
 			orgId,
+			contact,
+			initialMessage,
+			logo,
+			tooltipMessage,
 		})
 
-		// this.eventEmitter.emit('agent.created', { agentId, name, organizationId })
-
 		return { agentId }
+	}
+
+	async updateAgent(agentId: string, updateAgentDto: Partial<Agent>) {
+		const agent = await this.agentModel.getAgentById(agentId)
+
+		if (!agent) {
+			throw new NotFoundException('Agent not found')
+		}
+
+		const agentUpdated = await this.agentModel.updateAgent(agentId, updateAgentDto)
+
+		return agentUpdated
+	}
+
+	async deleteAgent(agentId: string) {
+		const agent = await this.agentModel.getAgentById(agentId)
+
+		if (!agent) {
+			throw new NotFoundException('Agent not found')
+		}
+
+		const isDeleted = await this.agentModel.deleteAgent(agentId)
+		return { success: isDeleted }
 	}
 }

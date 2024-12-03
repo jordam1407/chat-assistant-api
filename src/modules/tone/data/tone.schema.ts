@@ -6,10 +6,13 @@ export type ToneDocument = HydratedDocument<Tone>
 @Schema({ timestamps: true })
 export class Tone extends Document {
 	@Prop({ required: true, unique: true })
-	key: string // e.g., "formal", "informal"
+	key: string
 
 	@Prop({ required: true })
-	name: string // e.g., "Formal", "Informal"
+	name: string
+
+	@Prop({ required: true })
+	value: string
 }
 
 export const ToneSchema = SchemaFactory.createForClass(Tone)

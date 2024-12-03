@@ -2,17 +2,25 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { Objective } from '@src/modules/objective/data/objective.schema'
 import { Tone } from '@src/modules/tone/data/tone.schema'
 import mongoose, { Document, HydratedDocument } from 'mongoose'
-import { v4 as uuid } from 'uuid'
 export type AgentDocument = HydratedDocument<Agent>
 
 // Agent class
 @Schema({ timestamps: true })
 export class Agent extends Document {
-	@Prop({ required: true, immutable: true, unique: true, default: uuid })
-	agentId: string
-
 	@Prop({ required: true })
 	name: string
+
+	@Prop({ required: true })
+	initialMessage: string
+
+	@Prop({ required: true })
+	tooltipMessage: string
+
+	@Prop({ required: true })
+	logo: string
+
+	@Prop({ required: true })
+	contact: string
 
 	@Prop({
 		type: String,

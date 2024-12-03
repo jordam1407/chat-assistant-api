@@ -10,6 +10,9 @@ export class Objective extends Document {
 
 	@Prop({ required: true })
 	name: string
+
+	@Prop({ required: true })
+	value: string
 }
 
 export const ObjectiveSchema = SchemaFactory.createForClass(Objective)

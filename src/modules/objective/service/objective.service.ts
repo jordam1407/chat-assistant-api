@@ -1,13 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { ObjectiveRepository } from '@src/modules/objective/data/objective.repository'
 import { Objective } from '@src/modules/objective/data/objective.schema'
+import { ICreateObjective, IObjectiveService } from '@src/modules/objective/service/objective.interface'
 
 @Injectable()
-export class ObjectiveService {
+export class ObjectiveService implements IObjectiveService {
 	constructor(private readonly objectiveRepository: ObjectiveRepository) {}
 
-	async create(key: string, name: string) {
-		return this.objectiveRepository.create({ key, name })
+	async create({ key, name, value }: ICreateObjective) {
+		return this.objectiveRepository.create({ key, name, value })
 	}
 
 	async findAll() {
@@ -43,6 +44,6 @@ export class ObjectiveService {
 		if (!result) {
 			throw new NotFoundException(`Objective with ID "${id}" not found`)
 		}
-		return { message: 'Objective successfully deleted' }
+		return { success: result }
 	}
 }

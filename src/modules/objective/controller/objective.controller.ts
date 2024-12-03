@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
 import { ApiKey } from '@src/core/decorators/api-key-decorator'
-import { Public } from '@src/modules/auth/decorators/auth.decorator'
+import { CreateObjectiveDto } from '@src/modules/objective/dto/create-objective.dto'
+import { UpdateObjectiveDto } from '@src/modules/objective/dto/update-objective.dto'
 import { ObjectiveService } from '@src/modules/objective/service/objective.service'
 
 @ApiKey()
@@ -9,8 +10,8 @@ export class ObjectiveController {
 	constructor(private readonly objectiveService: ObjectiveService) {}
 
 	@Post()
-	async create(@Body() createObjectiveDto: { key: string; name: string }) {
-		return this.objectiveService.create(createObjectiveDto.key, createObjectiveDto.name)
+	async create(@Body() { key, name, value }: CreateObjectiveDto) {
+		return this.objectiveService.create({ key, name, value })
 	}
 
 	@Get()
@@ -29,11 +30,10 @@ export class ObjectiveController {
 	}
 
 	@Patch(':id')
-	async update(@Param('id') id: string, @Body() updateObjectiveDto: { name: string }) {
+	async update(@Param('id') id: string, @Body() updateObjectiveDto: UpdateObjectiveDto) {
 		return this.objectiveService.update(id, updateObjectiveDto)
 	}
 
-	@Public()
 	@Delete(':id')
 	async delete(@Param('id') id: string) {
 		return this.objectiveService.delete(id)

@@ -7,9 +7,9 @@ import { Model } from 'mongoose'
 export class ObjectiveRepository {
 	constructor(@InjectModel(Objective.name) private readonly objectiveModel: Model<ObjectiveDocument>) {}
 
-	async create(data: { key: string; name: string }): Promise<Objective> {
-		const objective = new this.objectiveModel(data)
-		return objective.save()
+	async create({ key, name, value }: { key: string; name: string; value: string }): Promise<Objective> {
+		const objective = await this.objectiveModel.create({ key, name, value })
+		return objective
 	}
 
 	async findAll(): Promise<Objective[]> {

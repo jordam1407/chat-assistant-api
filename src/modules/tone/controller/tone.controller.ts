@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
 import { ApiKey } from '@src/core/decorators/api-key-decorator'
+import { CreateToneDto } from '@src/modules/tone/dto/create-tone.dto'
 import { ToneService } from '@src/modules/tone/service/tone.service'
 @ApiKey()
 @Controller('tones')
@@ -7,8 +8,8 @@ export class ToneController {
 	constructor(private readonly toneService: ToneService) {}
 
 	@Post()
-	async create(@Body() createToneDto: { key: string; name: string }) {
-		return this.toneService.create(createToneDto.key, createToneDto.name)
+	async create(@Body() { key, name, value }: CreateToneDto) {
+		return this.toneService.create({ key, name, value })
 	}
 
 	@Get()
@@ -27,8 +28,8 @@ export class ToneController {
 	}
 
 	@Patch(':id')
-	async update(@Param('id') id: string, @Body() updateToneDto: { name: string }) {
-		return this.toneService.update(id, updateToneDto.name)
+	async update(@Param('id') id: string, @Body() updateToneDto: { name: string; value: string }) {
+		return this.toneService.update(id, updateToneDto)
 	}
 
 	@Delete(':id')

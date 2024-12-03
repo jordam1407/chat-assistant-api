@@ -16,7 +16,7 @@ describe('AppController', () => {
 
 	describe('root', () => {
 		it('should return "Hello World!"', () => {
-			expect(toneController.create({ key: 'string', name: 'String' })).toBe('Hello World!')
+			expect(toneController.create({ key: 'string', name: 'String', value: 'string' })).toBe('Hello World!')
 		})
 	})
 })

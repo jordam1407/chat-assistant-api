@@ -7,7 +7,17 @@ import { Model } from 'mongoose'
 @Injectable()
 export class AgentRepository {
 	constructor(@InjectModel(Agent.name) private readonly agentModel: Model<Agent>) {}
-	async createAgent({ name, tone, objective, systemPrompt, orgId }: ICreateAgent): Promise<string> {
+	async createAgent({
+		name,
+		tone,
+		objective,
+		systemPrompt,
+		orgId,
+		contact,
+		initialMessage,
+		logo,
+		tooltipMessage,
+	}: ICreateAgent): Promise<string> {
 		if (!systemPrompt) {
 			systemPrompt = `
 			You are an AI agent named "${name}", designed to assist users effectively.
@@ -23,13 +33,23 @@ export class AgentRepository {
 		  `.trim()
 		}
 
-		const agent = await this.agentModel.create({ name, tone, objective, systemPrompt, orgId })
+		const agent = await this.agentModel.create({
+			name,
+			tone,
+			objective,
+			systemPrompt,
+			orgId,
+			contact,
+			tooltipMessage,
+			initialMessage,
+			logo,
+		})
 
-		return agent.agentId
+		return agent.id
 	}
 
-	async getAgentById(agentId: string): Promise<Agent> {
-		const agent = (await (await this.agentModel.findOne({ agentId })).populate('objective')).populate('tone')
+	async getAgentById(id: string): Promise<Agent> {
+		const agent = (await (await this.agentModel.findById(id)).populate('objective')).populate('tone')
 		return agent
 	}
 
@@ -38,11 +58,15 @@ export class AgentRepository {
 		return agents
 	}
 
-	async deleteAgent(agentId: string): Promise<void> {
-		const agent = await this.getAgentById(agentId)
-		if (!agent) {
-			throw new Error('Agent not found')
-		}
-		await this.agentModel.deleteOne({ agentId }).exec()
+	async deleteAgent(agentId: string): Promise<boolean> {
+		const result = await this.agentModel.findByIdAndDelete(agentId).exec()
+
+		return result !== null
+	}
+
+	async updateAgent(agentId: string, updateAgentDto: Partial<Agent>) {
+		const updatedAgent = this.agentModel.findByIdAndUpdate(agentId, updateAgentDto, { new: true }).exec()
+
+		return updatedAgent
 	}
 }

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Param, Post } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Inject, Param, Post, Put } from '@nestjs/common'
 import { ApiKey } from '@src/core/decorators/api-key-decorator'
 import { Agent } from '@src/modules/agent/data/agent.schema'
 import { IAgentRequestDto } from '@src/modules/agent/dto/agent.request.dto'
@@ -13,9 +13,20 @@ export class AgentController {
 
 	@Post()
 	async createAgent(
-		@Body() { name, toneId, objectiveId, systemPrompt, orgId }: IAgentRequestDto
+		@Body()
+		{ name, toneId, objectiveId, systemPrompt, orgId, contact, initialMessage, logo, tooltipMessage }: IAgentRequestDto
 	): Promise<IAgentResponseDto> {
-		return this.agentService.createAgent({ name, toneId, objectiveId, systemPrompt, orgId })
+		return this.agentService.createAgent({
+			name,
+			toneId,
+			objectiveId,
+			systemPrompt,
+			orgId,
+			contact,
+			initialMessage,
+			logo,
+			tooltipMessage,
+		})
 	}
 
 	@Get('/:agentId')
@@ -26,5 +37,15 @@ export class AgentController {
 	@Get('/organization/:orgId')
 	async listAgentsByOrgId(@Param('orgId') orgId: string): Promise<IAgentsList> {
 		return this.agentService.listAgentsByOrgId(orgId)
+	}
+
+	@Put('/:agentId')
+	async updateAgent(@Param('agentId') agentId: string, @Body() updateAgentDto: Partial<Agent>) {
+		return this.agentService.updateAgent(agentId, updateAgentDto)
+	}
+
+	@Delete('/:agentId')
+	async deleteAgent(@Param('agentId') agentId: string) {
+		return this.agentService.deleteAgent(agentId)
 	}
 }

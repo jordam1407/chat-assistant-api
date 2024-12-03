@@ -16,6 +16,10 @@ export interface ICreateAgent {
 	objective: Objective
 	systemPrompt?: string
 	orgId: string
+	initialMessage: string
+	tooltipMessage: string
+	logo: string
+	contact: string
 }
 
 export interface IAgentsList {

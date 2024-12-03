@@ -4,4 +4,8 @@ export class IAgentRequestDto {
 	objectiveId: string
 	systemPrompt?: string
 	orgId: string
+	initialMessage: string
+	tooltipMessage: string
+	logo: string
+	contact: string
 }

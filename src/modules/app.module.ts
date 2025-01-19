@@ -5,13 +5,23 @@ import { validate } from '@src/config/core/env.validation'
 import configuration from '@src/config/core/environment.config'
 import { MongoModule } from '@src/config/database/mongo.module'
 import { ThrottlerConfigModule } from '@src/config/security/throttler.module'
+import { AgentModule } from '@src/modules/agent/agent.module'
 import { AuthModule } from '@src/modules/auth/auth.module'
 import { InstructionModule } from '@src/modules/instructions/instructions.module'
 import { KnowledgeBaseModule } from '@src/modules/knowledge-base/knowledge-base.module'
-import { QueryClassificationModule } from '@src/modules/queryClassification/queryClassification.module'
+import { ObjectiveModule } from '@src/modules/objective/objective.module'
 import { ThreadModule } from '@src/modules/thread/thread.module'
+import { ToneModule } from '@src/modules/tone/tone.module'
 
-const API_MODULES = [ThreadModule, AuthModule, KnowledgeBaseModule, InstructionModule, QueryClassificationModule]
+const API_MODULES = [
+	ThreadModule,
+	AuthModule,
+	KnowledgeBaseModule,
+	InstructionModule,
+	AgentModule,
+	ToneModule,
+	ObjectiveModule,
+]
 
 const APIs = ['assistants']
 

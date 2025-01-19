@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
+import { AgentModule } from '@src/modules/agent/agent.module'
 import { KnowledgeBaseModule } from '@src/modules/knowledge-base/knowledge-base.module'
 import { OpenAiModule } from '@src/modules/openai/openai.module'
 import { OrgModule } from '@src/modules/organization/org.module'
@@ -15,6 +16,7 @@ import { ThreadService } from '@src/modules/thread/service/thread.service'
 		OpenAiModule,
 		OrgModule,
 		KnowledgeBaseModule,
+		AgentModule,
 		QueryClassificationModule,
 	],
 	controllers: [ThreadController],

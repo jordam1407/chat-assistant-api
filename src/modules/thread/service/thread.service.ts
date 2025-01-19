@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common'
 import { EventEmitter2 } from '@nestjs/event-emitter'
-import { BASE_INSTRUCTION } from '@src/core/constants/instruction'
 import { ExtractChunkData } from '@src/core/types/types'
+import { AgentService } from '@src/modules/agent/service/agent.service'
 import { KnowledgeBaseService } from '@src/modules/knowledge-base/service/knowledge-base.service'
 import { OpenAiService } from '@src/modules/openai/service/openai.service'
 import { Org } from '@src/modules/organization/data/org.schema'
@@ -27,6 +27,7 @@ export class ThreadService {
 
 	constructor(
 		private readonly threadModel: ThreadRepository,
+		private readonly agentService: AgentService,
 		private readonly openAiAdapter: OpenAiService,
 		private readonly orgService: OrgService,
 		private readonly knowledgeBase: KnowledgeBaseService,
@@ -34,9 +35,10 @@ export class ThreadService {
 		private readonly eventEmitter: EventEmitter2
 	) {}
 
-	async fetchAnswer({ message, orgId, tId }: IFetchAnserReq): Promise<IFetchAnswerResponse> {
+	async fetchAnswer({ message, orgId, tId, agentId }: IFetchAnserReq): Promise<IFetchAnswerResponse> {
 		this.threadId = tId
 		const org = await this.orgService.findOrgById(orgId)
+		const agent = await this.agentService.getAgentById(agentId)
 		this.validateOrg(org)
 
 		if (!this.threadId) {
@@ -71,8 +73,10 @@ export class ThreadService {
 			customInstruction: this.generateInstructions({
 				companyName: org.orgName,
 				context: needContext ? context.map((item, i) => `Citation${i + 1}: ${item.pageContent}`).join(`\n\n`) : '',
-				instruction: org.instruction ?? BASE_INSTRUCTION,
 				supportContact: org.support,
+				name: agent.name,
+				objective: agent.objective.value,
+				tone: agent.tone.value,
 			}),
 			pastMessages: (await this.threadModel.getConversation(this.threadId)).messages,
 		})
@@ -176,7 +180,6 @@ export class ThreadService {
 		}
 	}
 
-	// Helpers
 	private calculatePercentChange(current: IUsageItems, lastPeriod: IUsageItems): IUsageItems {
 		const percentChange = (currentValue: number, lastValue: number) =>
 			lastValue === 0 ? (currentValue > 0 ? 100 : 0) : ((currentValue - lastValue) / lastValue) * 100
@@ -207,18 +210,36 @@ export class ThreadService {
 	private generateInstructions({
 		companyName,
 		context,
-		instruction,
 		supportContact,
+		objective,
+		tone,
+		name,
 	}: {
-		instruction: string
 		companyName: string
 		context: string
 		supportContact: string
+		tone: string
+		objective: string
+		name: string
 	}): string {
-		const formattedInstruction = instruction
-			.replace(/\${companyName}/g, companyName)
-			.replace(/\${context}/g, context)
-			.replace(/\${supportContact}/g, supportContact)
+		const formattedInstruction = `
+				Use the following context as your learned knowledge, inside <context></context> XML tags. You are not allowed to mention that you got information from context. 
+				<context>${context}</context>
+
+				When answer to user: - If the user’s query is unclear or unrelated to the context, kindly ask for clarification to better assist them.
+
+				You are ${name}, an intelligent assistant responsible for managing customer interactions for ${companyName} across all communication tools.
+
+				Tone: ${tone}
+
+				Objective: ${objective}
+
+				Your guidelines include: 
+				1. Focus on ${companyName}: Only answer questions directly related to ${companyName}'s. Politely decline to answer questions outside of ${companyName}'s scope, and direct the user back to relevant topics. 
+				2. Concise Responses: Aim for clear, straightforward replies that quickly address customer concerns or requests.
+				3. Include all relevant links from the context in your response, along with clear instructions for their use.
+				4. Escalating to Human Support: If the customer requests to speak to human support,  provide the support on link: [Clique aqui para falar com Suporte](${supportContact}) 
+		  `.trim()
 
 		return formattedInstruction
 	}

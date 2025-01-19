@@ -7,6 +7,7 @@ import { OpenAiService } from '@src/modules/openai/service/openai.service'
 import { Org } from '@src/modules/organization/data/org.schema'
 import { ConsumeCreditEvent } from '@src/modules/organization/events/consume-credit.event'
 import { OrgService } from '@src/modules/organization/service/org.service'
+import { QueryClassificationService } from '@src/modules/queryClassification/service/queryClassification.service'
 import { ThreadRepository } from '@src/modules/thread/data/thread.repository'
 import { Message, SourceDetail } from '@src/modules/thread/data/thread.schema'
 import {
@@ -29,6 +30,7 @@ export class ThreadService {
 		private readonly openAiAdapter: OpenAiService,
 		private readonly orgService: OrgService,
 		private readonly knowledgeBase: KnowledgeBaseService,
+		private readonly queryClass: QueryClassificationService,
 		private readonly eventEmitter: EventEmitter2
 	) {}
 

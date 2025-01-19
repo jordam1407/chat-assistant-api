@@ -195,7 +195,7 @@ export class AuthService {
 				throw new BadRequestException('Both current password and new password must be provided')
 			}
 
-			const passwordMatch = await bcrypt.compare(password, user.password as string)
+			const passwordMatch = password === user.password
 			if (!passwordMatch) {
 				throw new UnauthorizedException('Invalid credentials')
 			}

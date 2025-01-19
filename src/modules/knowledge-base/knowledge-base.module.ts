@@ -11,6 +11,6 @@ import { KnowledgeBaseService } from '@src/modules/knowledge-base/service/knowle
 	controllers: [KnowledgeBaseController],
 	providers: [KnowledgeBaseService, VectorRepository],
 	imports: [MongooseModule.forFeature([{ name: Vector.name, schema: VectorSchema }]), EmbeddingModule, FilesModule],
-	exports: [KnowledgeBaseService],
+	exports: [KnowledgeBaseService, VectorRepository],
 })
 export class KnowledgeBaseModule {}

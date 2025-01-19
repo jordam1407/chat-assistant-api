@@ -18,21 +18,6 @@ export class AgentRepository {
 		logo,
 		tooltipMessage,
 	}: ICreateAgent): Promise<string> {
-		if (!systemPrompt) {
-			systemPrompt = `
-			You are an AI agent named "${name}", designed to assist users effectively.
-			Your tone of communication should reflect the following: "${tone}".
-			Your primary objective is: "${objective}".
-	  
-			Guidelines:
-			- Always prioritize clarity and accuracy in your responses.
-			- Stay consistent with the tone and objective provided.
-			- Adapt your behavior to fulfill the user's requirements while respecting the constraints of your design.
-	  
-			Remember, your responses should be helpful, engaging, and aligned with the goals defined.
-		  `.trim()
-		}
-
 		const agent = await this.agentModel.create({
 			name,
 			tone,
